@@ -11,9 +11,9 @@ function usage {
 export DEVSTACK_GATE_3PPRJ_BASE=osrg
 export DEVSTACK_GATE_3PBRANCH=ofaci
 export OSEXT_REPO="-b $DEVSTACK_GATE_3PBRANCH https://github.com/${DEVSTACK_GATE_3PPRJ_BASE}/os-ext-testing.git"
-export CONFIG_REPO="-b $DEVSTACK_GATE_3PBRANCH https://github.com/${DEVSTACK_GATE_3PPRJ_BASE}/config.git"
+export CONFIG_REPO="-b $DEVSTACK_GATE_3PBRANCH https://github.com/${DEVSTACK_GATE_3PPRJ_BASE}/system-config.git"
 export DEVSTACK_GATE_REPO="-b $DEVSTACK_GATE_3PBRANCH https://github.com/${DEVSTACK_GATE_3PPRJ_BASE}/devstack-gate.git"
-export INST_PUPPET_SH="https://raw.github.com/${DEVSTACK_GATE_3PPRJ_BASE}/config/master/install_puppet.sh"
+export INST_PUPPET_SH="https://raw.github.com/${DEVSTACK_GATE_3PPRJ_BASE}/system-config/master/install_puppet.sh"
 
 if [ -z "$1" ]; then
     echo "node-type does not specify !"
