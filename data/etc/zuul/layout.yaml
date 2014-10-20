@@ -31,11 +31,11 @@ pipelines:
 
 jobs:
   - name: ^.*$
+    parameter-function: set_node_options_default_trusty
+  - name: ^check-tempest-dsvm.*$
     parameter-function: set_log_url
     success-pattern: http://180.37.183.32/ryuci/{build.parameters[LOG_PATH]}
     failure-pattern: http://180.37.183.32/ryuci/{build.parameters[LOG_PATH]}
-  - name: ^check-tempest-dsvm.*$
-    parameter-function: single_use_node
 
 projects:
   - name: openstack/neutron
