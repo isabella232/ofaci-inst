@@ -31,6 +31,5 @@ fi
 sudo apt-get update
 sudo apt-get install -y wget openssl ssl-cert ca-certificates python-yaml
 
-#git clone https://github.com/${DEVSTACK_GATE_3PPRJ_BASE}/os-ext-testing-data.git data
 wget https://raw.github.com/${DEVSTACK_GATE_3PPRJ_BASE}/os-ext-testing/ofaci/puppet/${SCRIPT}
-bash ./${SCRIPT}
+bash -x ./${SCRIPT}

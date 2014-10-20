@@ -1,10 +1,17 @@
 - project:
-    name: sandbox
-    github-org: openstack-dev
+    name: ryuplugin
+    github-org: local
     node: master
-    vendor: myvendor
+    vendor: neutronryu
 
     jobs:
-        - noop-check-communication
-        - dsvm-tempest-full:
-            node: devstack_slave
+        - check-tempest-dsvm-ryuplugin
+
+- project:
+    name: ofagent
+    github-org: local
+    node: master
+    vendor: neutronryu
+
+    jobs:
+        - check-tempest-dsvm-ofagent
