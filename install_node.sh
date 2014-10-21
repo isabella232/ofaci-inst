@@ -12,6 +12,7 @@ export DEVSTACK_GATE_3PPRJ_BASE=osrg
 export DEVSTACK_GATE_3PBRANCH=ofaci
 export OSEXT_REPO="-b $DEVSTACK_GATE_3PBRANCH https://github.com/${DEVSTACK_GATE_3PPRJ_BASE}/os-ext-testing.git"
 export CONFIG_REPO="-b $DEVSTACK_GATE_3PBRANCH https://github.com/${DEVSTACK_GATE_3PPRJ_BASE}/system-config.git"
+export PROJECT_CONF_REPO=https://github.com/${DEVSTACK_GATE_3PPRJ_BASE}/project-config.git
 export DEVSTACK_GATE_REPO="-b $DEVSTACK_GATE_3PBRANCH https://github.com/${DEVSTACK_GATE_3PPRJ_BASE}/devstack-gate.git"
 export INST_PUPPET_SH="https://raw.github.com/${DEVSTACK_GATE_3PPRJ_BASE}/system-config/master/install_puppet.sh"
 
