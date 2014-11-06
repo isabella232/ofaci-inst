@@ -15,6 +15,7 @@ export CONFIG_REPO="-b $DEVSTACK_GATE_3PBRANCH https://github.com/${DEVSTACK_GAT
 export PROJECT_CONF_REPO=https://github.com/${DEVSTACK_GATE_3PPRJ_BASE}/project-config.git
 export DEVSTACK_GATE_REPO="-b $DEVSTACK_GATE_3PBRANCH https://github.com/${DEVSTACK_GATE_3PPRJ_BASE}/devstack-gate.git"
 export INST_PUPPET_SH="https://raw.github.com/${DEVSTACK_GATE_3PPRJ_BASE}/system-config/master/install_puppet.sh"
+export ZUUL_REVISION=1f4f8e136ec33b8babf58c0f43a83860fa329e52
 
 if [ -z "$1" ]; then
     echo "node-type does not specify !"
