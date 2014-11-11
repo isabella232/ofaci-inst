@@ -4,7 +4,7 @@ includes:
 pipelines:
   - name: check
     description: Newly uploaded patchsets enter this pipeline to receive an initial +/-1 Verified vote from Jenkins.
-    failure-message: Build failed. Leave a comment with 'ryu-recheck' to rerun a check. ('recheck' will be ignored.)
+    failure-message: Build failed. Leave a comment with 'ryu-recheck' to rerun a check. (Also 'recheck' is available.)
     manager: IndependentPipelineManager
     precedence: low
     trigger:
@@ -18,7 +18,7 @@ pipelines:
         # adds a comment to a review that says "recheck $VENDOR".
         - event: comment-added
           branch: ^master$
-          comment: (?i)^(Patch Set [0-9]+:\n\n)?\s*ryu-recheck\s*$
+          comment: (?i)^(Patch Set [0-9]+:)?( [\w\\+-]*)*(\n\n)?\s*(ryu-recheck|recheck)\s*$
 #        - event: comment-added
 #          branch: ^master$
 #          comment: (?i)^(Patch Set [0-9]+:)?( [\w\\+-]*)*(\n\n)?\s*recheck(( (?:bug|lp)[\s#:]*(\d+))|( myvendor))\s*$
