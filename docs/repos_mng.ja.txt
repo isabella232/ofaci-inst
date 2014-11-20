@@ -1,0 +1,262 @@
+======================================================
+Neutron OFAgent Third-party Testing リポジトリ管理手順
+======================================================
+
+概要
+====
+
+CI 関連のリポジトリは修正が頻繁に行われている為、最新版を使用した場合に
+失敗する場合があります。その為、動作確認が取れた時点での commit を branch
+として保持しておき通常はその branch によってインストールを行います。
+必要に応じ master の修正を取り込み branch を更新します。
+更新理由としては下記のものが考えられます。
+- 最新版の機能が必要になった。
+- 外部環境が変化し、そのままでは動作しなくなった。
+  参照先リポジトリ名が変更された。情報が無くなった等。
+
+
+リポジトリ環境
+==============
+
+OFAgent の CI 環境構築には下記のリポジトリを使用します。
+
+https://github.com/osrg/ofaci-inst
+https://github.com/osrg/devstack-gate
+https://github.com/osrg/os-ext-testing
+https://github.com/osrg/system-config
+https://github.com/osrg/project-config
+
+ofaci-inst を除いたリポジトリは fork して OFA 用の branch を作成してい
+ます。
+
+- https://github.com/osrg/ofaci-inst
+  OFA オリジナル。
+- https://github.com/osrg/devstack-gate
+  master を OFA 用に修正。
+- https://github.com/osrg/os-ext-testing
+  master を OFA 用に修正。
+  但し現状 master は最新の openstack リポジトリに追随していないので
+  rebase する事は無さそうです。
+- https://github.com/osrg/system-config
+  master のある時点のもので branch 作成(現状修正は無し)。
+- https://github.com/osrg/project-config
+  master のある時点のもので branch 作成(現状修正は無し)。
+  このリポジトリは system-config で参照されているが常にリビジョンとして
+  master branch を参照する様に作成されている(system-config の修正をなる
+  べく避ける為、そのままとした)。
+  そこで master は ofaci branch と常に同じものにして置く。
+
+branch としては現在 ofaci, ofaci_jenkins1533 があります。
+ofaci_jenkins1533 は jekins 1.533 で動作した時の branch で念の為作成し
+たものですが今後は使用する機会はない筈です。
+リポジトリ環境を修正する場合の手順は「リポジトリ環境の更新」を参照。
+
+
+インストールの流れ
+==================
+
+インストールの詳細については別紙を参照。ここでは使用 branch による違い
+について明記します。
+
+
+リポジトリの ofaci branch を使用する場合
+----------------------------------------
+
+インストール作業で直接使用するのは ofaci-inst リポジトリだけになります。
+通常は下記の流れでインストールします。
+
+$ git clone https://github.com/osrg/ofaci-inst
+$ cd ofaci-inst/data
+
+vars.sh を編集
+
+$ cd ..
+$ ./install_node.sh master|slave
+
+
+openstack リポジトリを使用する場合
+----------------------------------
+
+system-config、project-config として openstack リポジトリの maste を使
+用する場合は下記の修正後
+
+$ ./install_node.sh master|slave
+
+を実行します。
+下記 install_node.sh スクリプトの 1), 2), 3)(14,15,18 行目)をコメントにします。
+
+$ cat -n install_node.sh
+     1  #!/bin/bash
+     2
+     3  function usage {
+     4          cat <<- EOF
+     5
+     6            USAGE : `basename $0` node-type
+     7              node-type - master or slave
+     8          EOF
+     9  }
+    10
+    11  export DEVSTACK_GATE_3PPRJ_BASE=osrg
+    12  export DEVSTACK_GATE_3PBRANCH=ofaci
+    13  export OSEXT_REPO="-b $DEVSTACK_GATE_3PBRANCH https://github.com/${DEVSTACK_GATE_3PPRJ_BASE}/os-ext-testing.git"
+    14  export CONFIG_REPO="-b $DEVSTACK_GATE_3PBRANCH https://github.com/${DEVSTACK_GATE_3PPRJ_BASE}/system-config.git"	<-- 1)
+    15  export PROJECT_CONF_REPO=https://github.com/${DEVSTACK_GATE_3PPRJ_BASE}/project-config.git				<-- 2)
+    16  export DEVSTACK_GATE_REPO="-b $DEVSTACK_GATE_3PBRANCH https://github.com/${DEVSTACK_GATE_3PPRJ_BASE}/devstack-gate.git"
+    17  export INST_PUPPET_SH="https://raw.github.com/${DEVSTACK_GATE_3PPRJ_BASE}/system-config/master/install_puppet.sh"
+    18  export ZUUL_REVISION=1f4f8e136ec33b8babf58c0f43a83860fa329e52								<-- 3)
+    19
+    20  if [ -z "$1" ]; then
+    21      echo "node-type does not specify !"
+    22      usage
+    23      exit 1
+    24  else
+    25      if [ ! "${1}" == "master" -a ! "${1}" == "slave" ]; then
+    26          echo "incorrect node-type: $1"
+    27          usage
+    28          exit 1
+    29      fi
+    30      SCRIPT=install_${1}.sh
+    31  fi
+    32
+    33  sudo apt-get update
+    34  sudo apt-get install -y wget openssl ssl-cert ca-certificates python-yaml
+    35
+    36  wget https://raw.github.com/${DEVSTACK_GATE_3PPRJ_BASE}/os-ext-testing/ofaci/puppet/${SCRIPT}
+    37  bash -x ./${SCRIPT}
+$
+
+
+リポジトリ環境の更新
+====================
+
+ofaci branch は OFA 用 CI 環境の最新の commit を保持するものとします。
+必要に応じて upstream を取り込む場合は ofaci-dev branch で作業し、動作
+確認の後 ofaci branch に merge します。その際現在の ofaci は ofaci_yyyymmdd
+として残します。
+
+全体の流れ
+----------
+
+最新の master を取り込む場合は下記の手順で作成します。
+
+1) 開発用 brnch として ofaci-dev を作成して修正。
+2) ofaci-dev 環境の動作確認。
+3) 動作確認が取れた時点で ofaci branch と入れ換え。
+   a) 現在の jenkins を一時停止。
+      現在動作中の CI 環境ではテストの際 devstack-gate リポジトリを参照
+      (ofaci branch を clone して使用)している為 jenkins を一時停止し
+      現在の job が終了するまで待つ。
+   b) branch の変更
+      ofci -> ofaci_yyyymmdd
+      ofaci-dev -> ofaci
+      project-config に関しては ofaci, master を同じにする
+   c) jenkins job の参照先 branch の変更
+      jenkins の job の configure 画面で Build Execute shell Command 内
+      の script で変数 DEVSTACK_GATE_3PBRANCH=ofaci を変更した branch 名
+      に変え、save します。変更箇所は複数あるので全部変えます。
+      (最新の devstack-gate で良い場合はこの手順をスキップ)
+   d) jenkins の停止解除。
+
+
+修正の詳細
+----------
+
+上述 1) の部分の詳細を説明します。
+各リポジトリは下記の手順で修正を行い確認します。
+
+
+- https://github.com/osrg/ofaci-inst
+  ofaci から ofaci-dev を作成し修正
+- https://github.com/osrg/devstack-gate
+  ofaci から ofaci-dev を作成
+  master 更新
+  master で ofaci-dev を rebase
+- https://github.com/osrg/os-ext-testing
+  ofaci から ofaci-dev を作成し修正
+- https://github.com/osrg/system-config
+  openstack の master を参照する様にして置く
+- https://github.com/osrg/project-config
+  openstack の master を参照する様にして置く
+
+
+前述の様に project-config は常に master が参照される為、修正の際には
+一時的に openstack の master を参照する様にして置き、修正作業が終わり
+リビジョンが決まった時点で osrg の master, ofaci branch を更新します。
+(https://github.com/openstack-infra/project-config)
+system-config も基本的に修正しない方針なので project-config と同様の
+手順で行う事とします。
+
+基本的に system-config, project-config はある時点での master と同じで修
+正しない方針だが作りによっては修正が必要となるかも知れません。
+何らかの都合で特定のリビジョンが必要な場合は、別リポジトリを用意しその
+master を必要なリビジョンに設定して参照します。この時 system-config は
+branch を指定できる為 ofaci-dev に必要なリビジョンを設定して作業する事
+が出来ます。
+参照手順は前述「リポジトリの master を使用する場合」の項を参照。
+
+
+下記 install_node.sh スクリプトを修正しインストールします。
+(ofaci-inst に commit せず、clone 後修正します。)
+
+$ cat -n install_node.sh
+     1  #!/bin/bash
+     2
+     3  function usage {
+     4          cat <<- EOF
+     5
+     6            USAGE : `basename $0` node-type
+     7              node-type - master or slave
+     8          EOF
+     9  }
+    10
+    11  export DEVSTACK_GATE_3PPRJ_BASE=osrg											<-- 1)
+    12  export DEVSTACK_GATE_3PBRANCH=ofaci											<-- 2)
+    13  export OSEXT_REPO="-b $DEVSTACK_GATE_3PBRANCH https://github.com/${DEVSTACK_GATE_3PPRJ_BASE}/os-ext-testing.git"
+    14  export CONFIG_REPO="-b $DEVSTACK_GATE_3PBRANCH https://github.com/${DEVSTACK_GATE_3PPRJ_BASE}/system-config.git"	<-- 3)
+    15  export PROJECT_CONF_REPO=https://github.com/${DEVSTACK_GATE_3PPRJ_BASE}/project-config.git				<-- 4)
+    16  export DEVSTACK_GATE_REPO="-b $DEVSTACK_GATE_3PBRANCH https://github.com/${DEVSTACK_GATE_3PPRJ_BASE}/devstack-gate.git"
+    17  export INST_PUPPET_SH="https://raw.github.com/${DEVSTACK_GATE_3PPRJ_BASE}/system-config/master/install_puppet.sh"
+    18  export ZUUL_REVISION=1f4f8e136ec33b8babf58c0f43a83860fa329e52								<-- 5)
+    19
+    20  if [ -z "$1" ]; then
+    21      echo "node-type does not specify !"
+    22      usage
+    23      exit 1
+    24  else
+    25      if [ ! "${1}" == "master" -a ! "${1}" == "slave" ]; then
+    26          echo "incorrect node-type: $1"
+    27          usage
+    28          exit 1
+    29      fi
+    30      SCRIPT=install_${1}.sh
+    31  fi
+    32
+    33  sudo apt-get update
+    34  sudo apt-get install -y wget openssl ssl-cert ca-certificates python-yaml
+    35
+    36  wget https://raw.github.com/${DEVSTACK_GATE_3PPRJ_BASE}/os-ext-testing/ofaci/puppet/${SCRIPT}
+    37  bash -x ./${SCRIPT}
+$
+
+1) 通常変更はしない。リポジトリのアカウントを変更した場合は該当のものに
+   変更。
+2) ofaci-dev に変更。
+3) openstack master を使用する場合はコメントアウト。
+   特定のリビジョンを使用する場合は使用リボジョンを ofaci-dev に用意し
+   $DEVSTACK_GATE_3PBRANCH を ofaci-dev に変更。
+4) openstack master を使用する場合はコメントアウト。
+   特定のリビジョンを使用する場合は別リポジトリを用意し PROJECT_CONF_REPO
+   を置き換え。
+5) openstack master を使用する場合はコメントアウト。
+   特定のリビジョンを使用する場合は commit id を指定。
+
+
+「Neutron OFAgent Third-party Testing 環境構築手順」に従いインストール
+後、実際に job を実行して正常に処理されるか確認する。
+- この際 /etc/zuul/layout.yaml の 結果通知箇所のコメントは実際に通知さ
+  れないようにそのままにして置く。
+- また結果ファイルの scp 転送先はの設定は、本番環境と混じると紛らわしい
+  のでテスト用の logserver を立ててそちらに転送する様にした方が良い。
+
+
+以上
