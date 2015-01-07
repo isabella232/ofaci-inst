@@ -1,0 +1,4 @@
+# sweep logs the 1st sunday of every month.
+PATH=/usr/lib/sysstat:/usr/sbin:/usr/sbin:/usr/bin:/sbin:/bin
+
+0 12 1-7 * * root /usr/bin/test $(date +\%w) -eq 0 && /data/sweep_logs/sweep_logs.sh 2>&1 >> /data/sweep_logs/sweep_logs.sh.log

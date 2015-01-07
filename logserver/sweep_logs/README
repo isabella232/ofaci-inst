@@ -1,0 +1,4 @@
+this scripts sweep ci log.
+
+# cp -r sweep_logs /data/
+# cp sweep_logs/zuul_sweep_logs.cron /etc/cron.d/zuul_sweep_logs
