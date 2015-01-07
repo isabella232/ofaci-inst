@@ -31,24 +31,39 @@ ofaci-inst を除いたリポジトリは fork して OFA 用の branch を作成してい
 
 - https://github.com/osrg/ofaci-inst
   OFA オリジナル。
+  CI 毎の固有情報の保有と、環境のインストールを自動化。
 - https://github.com/osrg/devstack-gate
+  job 実行時にテストを実施するスクリプト。
   master を OFA 用に修正。
 - https://github.com/osrg/os-ext-testing
+  主に環境構築を自動化するツール。
   master を OFA 用に修正。
   但し現状 master は最新の openstack リポジトリに追随していないので
   rebase する事は無さそうです。
 - https://github.com/osrg/system-config
+  環境構築の為のスクリプト。主に puppet の実行環境。
   master のある時点のもので branch 作成(現状修正は無し)。
 - https://github.com/osrg/project-config
+  CI 環境の設定ファイル等を保有。
   master のある時点のもので branch 作成(現状修正は無し)。
   このリポジトリは system-config で参照されているが常にリビジョンとして
   master branch を参照する様に作成されている(system-config の修正をなる
   べく避ける為、そのままとした)。
   そこで master は ofaci branch と常に同じものにして置く。
+  branch は主に master を必要なバージョンに書き戻すために使用する。
 
-branch としては現在 ofaci, ofaci_jenkins1533 があります。
-ofaci_jenkins1533 は jekins 1.533 で動作した時の branch で念の為作成し
-たものですが今後は使用する機会はない筈です。
+branch としては現在下記のものがあります。
+
+  ofaci
+    カレント branch
+  ofaci_jenkins1533
+    jekins 1.533 で動作した時の branch で念の為作成したもの。
+    今後は使用する機会はない筈です。
+  ofaci_20141211_latest_jenkins_and_no_split_tree
+    advanced service が他リポジトリに分岐した為、分岐する前の状態を保持。
+    juno では分岐していないので、juno 用としてはこの branch を使用する
+    事ができる。
+
 リポジトリ環境を修正する場合の手順は「リポジトリ環境の更新」を参照。
 
 
@@ -83,7 +98,8 @@ system-config、project-config として openstack リポジトリの maste を使
 $ ./install_node.sh master|slave
 
 を実行します。
-下記 install_node.sh スクリプトの 1), 2), 3)(14,15,18 行目)をコメントにします。
+下記 install_node.sh スクリプトの 1), 2), 3)(14,15,18 行目)をコメントに
+します。
 
 $ cat -n install_node.sh
      1  #!/bin/bash
@@ -131,8 +147,9 @@ $
 
 ofaci branch は OFA 用 CI 環境の最新の commit を保持するものとします。
 必要に応じて upstream を取り込む場合は ofaci-dev branch で作業し、動作
-確認の後 ofaci branch に merge します。その際現在の ofaci は ofaci_yyyymmdd
-として残します。
+確認の後 ofaci branch に merge します。その際現在の ofaci は
+  ofaci_yyyymmdd[_xxx]
+として残します(xxx はコメントがあれば付加)。
 
 全体の流れ
 ----------
@@ -179,9 +196,10 @@ ofaci branch は OFA 用 CI 環境の最新の commit を保持するものとします。
   openstack の master を参照する様にして置く
 
 
-前述の様に project-config は常に master が参照される為、修正の際には
-一時的に openstack の master を参照する様にして置き、修正作業が終わり
-リビジョンが決まった時点で osrg の master, ofaci branch を更新します。
+前述の様に project-config は常に master branch が参照される為、修正の際
+には一時的に openstack org. の master を参照する様にして置き、修正作業が
+終わりリビジョンが決まった時点で osrg org. の master, ofaci branch を更
+新しそちらを参照する様にします。
 (https://github.com/openstack-infra/project-config)
 system-config も基本的に修正しない方針なので project-config と同様の
 手順で行う事とします。
@@ -190,8 +208,8 @@ system-config も基本的に修正しない方針なので project-config と同様の
 正しない方針だが作りによっては修正が必要となるかも知れません。
 何らかの都合で特定のリビジョンが必要な場合は、別リポジトリを用意しその
 master を必要なリビジョンに設定して参照します。この時 system-config は
-branch を指定できる為 ofaci-dev に必要なリビジョンを設定して作業する事
-が出来ます。
+環境変数で branch を指定できる為 ofaci-dev に必要なリビジョンを設定して
+作業する事が出来ます。
 参照手順は前述「リポジトリの master を使用する場合」の項を参照。
 
 
@@ -242,11 +260,11 @@ $
    変更。
 2) ofaci-dev に変更。
 3) openstack master を使用する場合はコメントアウト。
-   特定のリビジョンを使用する場合は使用リボジョンを ofaci-dev に用意し
+   特定のリビジョンを使用する場合は使用リビジョンを ofaci-dev に用意し
    $DEVSTACK_GATE_3PBRANCH を ofaci-dev に変更。
 4) openstack master を使用する場合はコメントアウト。
-   特定のリビジョンを使用する場合は別リポジトリを用意し PROJECT_CONF_REPO
-   を置き換え。
+   特定のリビジョンを使用する場合は別リポジトリを用意し master に必要
+   リビジョンを設定し PROJECT_CONF_REPO を置き換え。
 5) openstack master を使用する場合はコメントアウト。
    特定のリビジョンを使用する場合は commit id を指定。
 
@@ -255,8 +273,123 @@ $
 後、実際に job を実行して正常に処理されるか確認する。
 - この際 /etc/zuul/layout.yaml の 結果通知箇所のコメントは実際に通知さ
   れないようにそのままにして置く。
-- また結果ファイルの scp 転送先はの設定は、本番環境と混じると紛らわしい
+- また結果ファイルの scp 転送先の設定は、本番環境と混じると紛らわしい
   のでテスト用の logserver を立ててそちらに転送する様にした方が良い。
+
+
+修正内容に関する説明
+====================
+
+master から修正、追加された処理の情報について記します。
+
+
+devstack-gate
+-------------
+
+- osrg 上の ryu, devstack-gate のリポジトリを clone, update する処理を
+  追加。
+- devstack で使用する localrc の編集処理に OFAent 用の設定を追加。
+- devstack で起動するサービスを設定する定義ファイル(features.yaml)に OFAent
+  で必要/不必要なサービスを登録。
+- devstack-gate ではテスト開始の前後で pre_test_hook, post_test_hook 
+  関数が定義されている場合、実行する様になっています。
+  現在 jenkins プロジェクト設定のシェルスクリプト内で下記の関数を定義。
+
+
+hook 関数例:
+
+----------
+function pre_test_hook {
+    if [ -e "$WORKSPACE/81-tempest.sh" ]; then
+         sed -e '/ping_timeout/s/ping_timeout.*$/ping_timeout 300/' -e '/ssh_timeout/s/ssh_timeout.*$/ssh_timeout 196/' $WORKSPACE/81-tempest.sh > $WORKSPACE/81-tempest.sh.tmp
+         mv $WORKSPACE/81-tempest.sh.tmp $WORKSPACE/81-tempest.sh
+         sudo cp $WORKSPACE/81-tempest.sh /opt/stack/new/devstack/extras.d/
+         sudo chown stack:stack /opt/stack/new/devstack/extras.d/81-tempest.sh
+    fi
+}
+export -f pre_test_hook
+function post_test_hook {
+    if [ -e "$WORKSPACE/get_ofalog.sh" ]; then
+        $WORKSPACE/get_ofalog.sh
+    fi
+}
+export -f post_test_hook
+----------
+
+  上記 pre_test_hook では tempest の設定を行う為に、ワークディレクトリ*1)
+  に 81-tempest.sh ファイルがあれば devstack/extras.d にコピーする。
+  devstack/extras.d 下のファイルは devstack で各サブコンポーネント設定
+  の追加処理として実行される。ここではテスト環境の設定を変える為に使用。
+  - scenario テストでの VM への接続確認のタイマ値を調整。
+  - OVS のタイマ値の調整。
+
+  上記 post_test_hook ではテスト終了後に OFA 用に必要となりそうな情報を
+  採取している。主に flow テーブル、ブリッジの情報。
+
+  *1) ワークディレクトリ
+  /home/jenkins/workspaces/workspace/check-tempest-dsvm-ofagent/
+
+  tempest 項目設定追加スクリプト例
+
+    https://github.com/osrg/ofaci-inst/blob/master/slave/81-tempest.sh
+
+  OFA 情報採取スクリプト例
+
+    https://github.com/osrg/ofaci-inst/blob/master/slave/get_ofalog.sh
+
+
+CI 運用に関する補足
+===================
+
+ホストマシン
+------------
+
+- イメージファイルの初期化
+  現在インストール直後のジョブ実行処理としてはメモリをクリアな状態に保
+  つ為に、ジョブ設定の build post task で reboot を行うスクリプト(rebuild-node.sh)
+  を実行しています。
+  しかしこれは前回の状態を引き継いだイメージを使い回しており、誤ったパッ
+  ケージ等、前のジョブで環境が破壊された状態でも次のジョブを実行する事
+  となります。場合によっては、手作業でクリーンな状態に復帰する必要も生
+  じます。
+  テストの実施に際してはテスト実行前のクリーンなイメージを使用する事が
+  望ましい為その方法を述べます。
+  何らかのツールを使用して行う事もできるかも知れないがここでは簡単な
+  方法を示します。qemu-img によるオーバラップイメージを使用します。
+
+  1) 事前にオーバーラップイメージで起動できるように libvirt の VM 設定
+     を変更しておく。
+  2) 現状の build post task スクリプトの reboot を shutdown に変更。
+  3) ホスト上で virsh により slave ノードをチェックしリストされない場
+     合 shutdown しているものと判断する。
+  4) qemu-img にてオーバラップイメージを作り直す。
+  5) ノードを virsh で start する。
+
+  上記の処理をスクリプトとして作成し、常時監視する様にする。
+
+  上記の処理を行うサンプルスクリプトが下記から参照できます。
+
+    https://github.com/osrg/ofaci-inst/tree/master/host/check_vm
+
+
+ログサーバ
+----------
+
+- CI ログのクリア
+  現在 CI の結果ファイルは１ヶ月間保有する事が定められています。
+  (http://ci.openstack.org/third_party.html 参照)
+  その為、ログサーバ上で１ヶ月ごとに期限の過ぎたログを削除するスウィー
+  パを cron で実行しています。
+  サンプルスクリプトが下記から参照できます。
+
+    https://github.com/osrg/ofaci-inst/tree/master/logserver/sweep_logs
+
+  サンプルでは下記の動きをします。
+  - 毎月の最初の日曜日 12:00 にスクリプトを実行。
+  - 空のディレクトリは jenkins のジョブと競合する可能性がある為削除しな
+    い。
+    空のディレクトリの削除はどこかのタイミングで jenkins ジョブを停止し
+    ディレクトリの削除スクリプト(sweep_empty_dirs_wrap.sh)を実行する。
 
 
 以上
