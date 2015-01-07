@@ -1,0 +1,4 @@
+scripts that can use on a slave.
+destination path may change by job.
+
+# cp 81-tempest.sh get_ofalog.sh /home/jenkins/workspaces/workspace/check-tempest-dsvm-ofagent/
