@@ -1,0 +1,12 @@
+check_vm monitors on a host machine if jenkins slaves exist.
+if a slave does not exist, check_vm recreates overlay image file and then
+it starts that slave.
+change a target slave name in check_vm.sh along your environment.
+
+installation
+
+# cp check_vm.init /etc/init.d/check_vm
+# cp check_vm.sh check_vm_wrap.sh /usr/local/bin/
+# cp check_vm.logrotate /etc/logrotate.d/check_vm
+# update-rc.d check_vm defaults 90
+# service check_vm start|stop

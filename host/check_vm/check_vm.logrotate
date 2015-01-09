@@ -1,0 +1,7 @@
+/var/log/check_vm.log {
+    daily
+    rotate 2
+    notifempty
+    compress
+    delaycompress
+}
