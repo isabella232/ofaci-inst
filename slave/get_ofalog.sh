@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#BASE=/opt/stack
+BASE=${BASE:-/opt/stack}
 OFALOGDIR=ofagent
 OFALOGPATH=/tmp/${OFALOGDIR}
 OFALOGFILE=${OFALOGPATH}/ofagent.log
