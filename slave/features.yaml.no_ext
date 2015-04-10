@@ -153,7 +153,7 @@ features:
 
   ofagent:
     base:
-      rm-services: []
+      rm-services: [q-lbaas, q-vpn, q-fwaas]
 
   ryuplugin:
     base:
