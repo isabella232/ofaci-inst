@@ -35,6 +35,7 @@ ofaci-inst を除いたリポジトリは fork して OFA 用の branch を作成してい
 - https://github.com/osrg/devstack-gate
   job 実行時にテストを実施するスクリプト。
   master を OFA 用に修正。
+  juno 以前で使用。kilo では環境設定により master を使用できる。
 - https://github.com/osrg/os-ext-testing
   主に環境構築を自動化するツール。
   master を OFA 用に修正。
@@ -60,9 +61,9 @@ branch としては現在下記のものがあります。
     jekins 1.533 で動作した時の branch で念の為作成したもの。
     今後は使用する機会はない筈です。
   ofaci_20141211_latest_jenkins_and_no_split_tree
-    advanced service が他リポジトリに分岐した為、分岐する前の状態を保持。
-    juno では分岐していないので、juno 用としてはこの branch を使用する
-    事ができる。
+    現在 advanced service と ofagent は他リポジトリに分岐している。この
+    branch は分岐する前の状態を保持している。
+    juno では分岐していないので、juno 用としてはこの branch を使用する。
 
 リポジトリ環境を修正する場合の手順は「リポジトリ環境の更新」を参照。
 
@@ -74,8 +75,8 @@ branch としては現在下記のものがあります。
 について明記します。
 
 
-リポジトリの ofaci branch を使用する場合
-----------------------------------------
+各リポジトリの ofaci branch を使用する場合
+------------------------------------------
 
 インストール作業で直接使用するのは ofaci-inst リポジトリだけになります。
 通常は下記の流れでインストールします。
@@ -92,8 +93,9 @@ $ ./install_node.sh master|slave
 openstack リポジトリを使用する場合
 ----------------------------------
 
-system-config、project-config として openstack リポジトリの maste を使
-用する場合は下記の修正後
+主に最新のリポジトリ環境を取り込みたい場合に行います。
+system-config、project-config として openstack リポジトリの master を使
+用する場合は install_node.sh スクリプト修正後
 
 $ ./install_node.sh master|slave
 
@@ -145,20 +147,22 @@ $
 リポジトリ環境の更新
 ====================
 
-ofaci branch は OFA 用 CI 環境の最新の commit を保持するものとします。
+ここでは openstack の最新のリポジトリを取り込むための手順を示します。
+
+ofaci branch は OFA 用 CI 環境の最新の commit を保持します。
 必要に応じて upstream を取り込む場合は ofaci-dev branch で作業し、動作
-確認の後 ofaci branch に merge します。その際現在の ofaci は
+確認・修正の後 ofaci branch に merge します。その際現在の ofaci は
   ofaci_yyyymmdd[_xxx]
 として残します(xxx はコメントがあれば付加)。
 
 全体の流れ
 ----------
 
-最新の master を取り込む場合は下記の手順で作成します。
-
 1) 開発用 brnch として ofaci-dev を作成して修正。
 2) ofaci-dev 環境の動作確認。
 3) 動作確認が取れた時点で ofaci branch と入れ換え。
+   現在稼働中の CI では一部 ofaci branch を参照している為下記の手順で置
+   き換えます。
    a) 現在の jenkins を一時停止。
       現在動作中の CI 環境ではテストの際 devstack-gate リポジトリを参照
       (ofaci branch を clone して使用)している為 jenkins を一時停止し
@@ -294,6 +298,12 @@ devstack-gate
 - devstack-gate ではテスト開始の前後で pre_test_hook, post_test_hook 
   関数が定義されている場合、実行する様になっています。
   現在 jenkins プロジェクト設定のシェルスクリプト内で下記の関数を定義。
+- kilo 以降では master を利用して CI を実行できる。手順としては一端 osrg
+  の devstack-gate を使用する設定でインストール後、master を使用する様に
+  切り替えている。これは jenkins の master 用の Execute Build Shell コー
+  ドの中に puppet で設定できない記号がある為です。具体的には'{}'。これが
+  解決できればインストール時から devstack-gate master を使用する設定にす
+  る事ができる。
 
 
 hook 関数例:
@@ -358,14 +368,14 @@ CI 運用に関する補足
   方法を示します。qemu-img によるオーバラップイメージを使用します。
 
   1) 事前にオーバーラップイメージで起動できるように libvirt の VM 設定
-     を変更しておく。
+     のイメージファイルをオーバーラップイメージファイルに変更する。
   2) 現状の build post task スクリプトの reboot を shutdown に変更。
   3) ホスト上で virsh により slave ノードをチェックしリストされない場
      合 shutdown しているものと判断する。
   4) qemu-img にてオーバラップイメージを作り直す。
   5) ノードを virsh で start する。
 
-  上記の処理をスクリプトとして作成し、常時監視する様にする。
+  上記の処理をスクリプトとして作成し、常時監視する様にします。
 
   上記の処理を行うサンプルスクリプトが下記から参照できます。
 

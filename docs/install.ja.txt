@@ -450,7 +450,11 @@ ubuntu@master:~$
   (インストール済み)から「Jenkins SCP publisher plugin」が導入されていること
   を確認します [Fig2]
 - ジョブcheck-tempest-dsvm-ofagentの設定内容を確認します [Fig3]
+  kilo 以降では devtstack-gate の master が使用できる。メンテナンスの手間削減
+  の為および zuul 不備の対応上 master を使用する事を推奨。
+  (後述 devstack-gate master の使用手順参照)
 - ジョブcheck-tempest-dsvm-ryupluginの設定内容を確認します [Fig4]
+  ryu plugin は kilo で削除されたので kilo 以降の場合は本ジョブは削除する。
 - Manage Jenkins(Jenkinsの管理) > Configure System(システムの設定)からSCP
   repository hostsの設定内容を確認します [Fig5]
   (現在パスワードは使用していません)
@@ -462,7 +466,6 @@ ubuntu@master:~$
 
     現状のスクリプトでは、スレーブノードからの接続ができなくなり、onlineに
     することができなくなります。
-
 
 *注意*
     /etc/zuul/layout/layout.yaml の jobs: で指定する結果転送先のアドレ
@@ -582,6 +585,12 @@ slave5   192.168.122.25
 -------- --------------
 slave6   192.168.122.26
 ======== ==============
+
+必要に応じ前述 Build Execute shell 3 でダウンロードしているファイルを
+下記ディレクトリに置いておくとダウンロードの処理を省略できる。
+    /home/jenkins/workspaces/workspace/check-tempest-dsvm-ofagent/
+対象は下記ファイル
+    81-tempest.sh, features.yaml, get_ofalog.sh
 
 
 Jenkinsへのスレーブノードの登録
@@ -954,6 +963,78 @@ zuulのデバッグログでGerritストリームイベントを処理していることが確認できます。
 
 verifiedの値がスコアになります。本来、failureの場合は-1を与えますが、現状
 では0のままで良いようです。
+
+
+devstack-gate master の使用手順
+-------------------------------
+
+kilo 以降では devtstack-gate の master branch を使用して CI を実行でき
+ます。その手順を示します。
+jenkins check-tempest-dsvm-ofagent job 設定で下記の変更を行います。
+
+1) Build Execute shell 1 の下記環境変数を master 用にする。
+      DEVSTACK_GATE_3PPRJ_BASE
+      DEVSTACK_GATE_3PBRANCH
+   下記の 1-a の指定を false から true にする。
+
+Jenkins Build Execute shell 1 抜粋
+
+----------
+#!/bin/bash -xe
+if false; then			<-- 1-a
+    export DEVSTACK_GATE_3PPRJ_BASE=openstack-infra
+    export DEVSTACK_GATE_3PBRANCH=master
+else
+    export DEVSTACK_GATE_3PPRJ_BASE=osrg
+    export DEVSTACK_GATE_3PBRANCH=ofaci
+fi
+...
+----------
+
+2) Build Execute shell 3 の内容を下記ダウンロードファイル jenkins_build_shell.ofa
+   の内容と入れ替える。
+       wget https://raw.github.com/osrg/ofaci-inst/samples/jenkins_build_shell.ofa
+3) 設定保存。
+
+*注意*
+  2015/4/10 時点で現用機では zuul の cross-repo 機能不備の為 extension
+  service(fwaas, lbaas, vpnaas, lbaas_agent_scheduler)を一時的に無効に
+  しています。この設定は下記の要領で check-tempest-dsvm-ofagent の設定
+  を修正し保存します。
+  不備内容は下記のものです。
+  - 現在の master node の zuul では cross-repo 機能がサポートされていな
+    い為 cross-repo 指定の gerrit job が登録されると zuul はそれを通常の
+    gerrit として扱う為、(依存先のリポジトリパッチが反映しない為)job が
+    fail する。
+  - 最新 zuul では cros-repo job 処理中に例外が発生する。
+  1) Build Execute shell 3 の DISABLE_NETWORK_API_EXTENSIONS 変数設定行
+     のコメントを削除し有効にする(下記 2-a)。
+  2) 同上の shell の features.yaml ダウンロードの処理を下記に変更する。
+
+         wget https://raw.github.com/osrg/ofaci-inst/master/slave/features.yaml
+     を
+         wget https://raw.github.com/osrg/ofaci-inst/master/slave/features.yaml.no_ext
+         mv features.yaml.no_ext features.yaml
+     に変更(下記 2-b)
+
+samples/jenkins_build_shell.ofa(Build Execute shell 3) 抜粋
+
+----------
+...
+DEVSTACK_LOCAL_CONFIG="$DEVSTACK_LOCAL_CONFIG LIBVIRT_TYPE=qemu"
+#DEVSTACK_LOCAL_CONFIG="$DEVSTACK_LOCAL_CONFIG DISABLE_NETWORK_API_EXTENSIONS=fwaas,lbaas,vpnaas,lbaas_agent_scheduler"		<-- 2-a
+DEVSTACK_LOCAL_CONFIG="$DEVSTACK_LOCAL_CONFIG DEVSTACK_GATE_ENABLE_HTTPD_MOD_WSGI_SERVICES=0"
+...
+if [ ! -e "$WORKSPACE/features.yaml" ]; then
+    if [ ! -e features.yaml ]; then
+        wget https://raw.github.com/osrg/ofaci-inst/master/slave/features.yaml		<-- 2-b
+    fi
+    if [ ! -e "$WORKSPACE/features.yaml" ]; then
+        cp features.yaml $WORKSPACE/features.yaml
+    fi
+fi
+...
+----------
 
 
 stable 用 master/slave VM の構築
