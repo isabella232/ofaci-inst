@@ -42,3 +42,6 @@ projects:
     check:
       - check-tempest-dsvm-ryuplugin
       - check-tempest-dsvm-ofagent
+#  - name: stackforge/networking-ofagent
+#    check:
+#      - check-tempest-dsvm-ofagent

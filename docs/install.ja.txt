@@ -438,6 +438,9 @@ projects:
     check:
       - check-tempest-dsvm-ryuplugin
       - check-tempest-dsvm-ofagent
+#  - name: stackforge/networking-ofagent
+#    check:
+#      - check-tempest-dsvm-ofagent
 ubuntu@master:~$
 
 
@@ -450,8 +453,8 @@ ubuntu@master:~$
   (インストール済み)から「Jenkins SCP publisher plugin」が導入されていること
   を確認します [Fig2]
 - ジョブcheck-tempest-dsvm-ofagentの設定内容を確認します [Fig3]
-  kilo 以降では devtstack-gate の master が使用できる。メンテナンスの手間削減
-  の為および zuul 不備の対応上 master を使用する事を推奨。
+  kilo 以降では devtstack-gate の master が使用できる。メンテナンスの手
+  間削減の為および zuul 不備の対応上 master を使用する事を推奨。
   (後述 devstack-gate master の使用手順参照)
 - ジョブcheck-tempest-dsvm-ryupluginの設定内容を確認します [Fig4]
   ryu plugin は kilo で削除されたので kilo 以降の場合は本ジョブは削除する。
@@ -460,6 +463,14 @@ ubuntu@master:~$
   (現在パスワードは使用していません)
 - Manage Jenkins(Jenkinsの管理) > Manage Credentials から認証情報を確認します
   [Fig6]
+- kilo 以降では ofagent のリポジトリが stackforge に分離しているので、stckforge
+  からのトリガも処理します。その為に /etc/zuul/layout/layout.yaml の下
+  記の部分のコメントを外します。
+
+      #  - name: stackforge/networking-ofagent
+      #    check:
+      #      - check-tempest-dsvm-ofagent
+
 
 *注意*
     Jenkinsのセキュリティ設定は行わないでください。
@@ -1109,6 +1120,9 @@ projects:
     check:
       - check-tempest-dsvm-ryuplugin
       - check-tempest-dsvm-ofagent
+#  - name: stackforge/networking-ofagent
+#    check:
+#      - check-tempest-dsvm-ofagent
 ubuntu@smaster:~$
 
 
