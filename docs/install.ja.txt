@@ -245,13 +245,13 @@ SCP_DESTPATH                    ログサーバへテストログをSCPで転送する際の転送
 jenkins_key、jenkins_key.pubになります。gerrit_key、gerrit_key.pubは、サービス
 アカウントを取得した際に使用したものをコピーしてください。
 
-    $ cp ~/id_rsa ryuci/data/gerrit_key
-    $ cp ~/id_rsa.pub ryuci/data/gerrit_key.pub
+    $ cp ~/id_rsa ofaci-inst/data/gerrit_key
+    $ cp ~/id_rsa.pub ofaci-inst/data/gerrit_key.pub
 
 jenkins_key、jenkins_key.pubは、以下のコマンドで新しいsshキーを作ることが
 できます。
 
-    $ cd ryuci/data
+    $ cd ofaci-inst/data
     $ ssh-keygen -t rsa -b 1024 -N '' -f jenkins_key
 
 
@@ -316,12 +316,12 @@ OSインストール後、ネットワークの設定をDHCPからstatic指定に変更します。
 
 ホストからインストールスクリプトをコピーします。
 
-    $ scp -r ryuci ubuntu@192.168.122.10:
+    $ scp -r ofaci-inst ubuntu@192.168.122.10:
 
 マスターノード用のインストールスクリプトを実行します。
 
-    ubuntu@master:~$ cd ryuci
-    ubuntu@master:~/ryuci$ ./install_master.sh
+    ubuntu@master:~$ cd ofaci-inst
+    ubuntu@master:~/ofaci-inst$ ./install_node.sh master
 
 ユーザjenkinsのホームディレクトリを設定します。
 
@@ -540,12 +540,12 @@ OSインストール後、ネットワークの設定をDHCPからstatic指定に変更します。
 
 ホストからインストールスクリプトをコピーします。
 
-    $ scp -r ryuci ubuntu@192.168.122.21:
+    $ scp -r ofaci-inst ubuntu@192.168.122.21:
 
 スレーブノード用のインストールスクリプトを実行します。
 
-    ubuntu@slave1:~$ cd ryuci
-    ubuntu@slave1:~/ryuci$ ./install_slave.sh
+    ubuntu@slave1:~$ cd ofaci-inst
+    ubuntu@slave1:~/ofaci-inst$ ./install_node.sh slave
 
 インストール結果を確認します。
 
@@ -677,8 +677,8 @@ ssh鍵でログインできるようにauthorized_keysを設定します。
     $ sudo chmod og-rw /home/jenkins/.ssh/authorized_keys
     $ sudo chown -R jenkins.jenkins /home/jenkins/.ssh
 
-このid_rsa.pubは、テストサーバのryuci/data/jenkins_key.pubをコピーしたもの
-です。
+このid_rsa.pubは、テストサーバのofaci-inst/data/jenkins_key.pubをコピー
+したものです。
 
 sshサーバは、パスワード認証を無効にしておきます。
 
