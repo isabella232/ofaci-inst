@@ -597,11 +597,20 @@ slave5   192.168.122.25
 slave6   192.168.122.26
 ======== ==============
 
-必要に応じ前述 Build Execute shell 3 でダウンロードしているファイルを
-下記ディレクトリに置いておくとダウンロードの処理を省略できる。
+必要に応じ前述の Build Execute shell 3 でダウンロードしているファイルを
+下記ディレクトリに置いておくとダウンロードの処理を省略できます。
     /home/jenkins/workspaces/workspace/check-tempest-dsvm-ofagent/
-対象は下記ファイル
+対象は現時点では下記ファイル
     81-tempest.sh, features.yaml, get_ofalog.sh
+
+*注意*
+    下記ファイルの内容は最新のものに変える必要が有ります。
+        /home/jenkins/.pip/pip.conf
+        /home/jenkins/.pip/.pydistutils.cfg
+    各々最新の system-config リポジトリの下記のファイル内容に更新します。
+    system-config のバージョンによっては同じ内容かもしれません。
+        system-config/modules/openstack_project/files/pip.conf
+        system-config/modules/openstack_project/files/pydistutils.cfg
 
 
 Jenkinsへのスレーブノードの登録
