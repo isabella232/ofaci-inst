@@ -218,7 +218,6 @@ master を必要なリビジョンに設定して参照します。この時 system-config は
 
 
 下記 install_node.sh スクリプトを修正しインストールします。
-(ofaci-inst に commit せず、clone 後修正します。)
 
 $ cat -n install_node.sh
      1  #!/bin/bash
@@ -281,10 +280,10 @@ $
   のでテスト用の logserver を立ててそちらに転送する様にした方が良い。
 
 
-修正内容に関する説明
-====================
+現在の修正内容に関する説明
+=========================
 
-master から修正、追加された処理の情報について記します。
+現時点で master から修正、追加された主な処理の情報について記します。
 
 
 devstack-gate
@@ -303,7 +302,15 @@ devstack-gate
   切り替えている。これは jenkins の master 用の Execute Build Shell コー
   ドの中に puppet で設定できない記号がある為です。具体的には'{}'。これが
   解決できればインストール時から devstack-gate master を使用する設定にす
-  る事ができる。
+  る事ができる。Execute Build Shell 例は後述。これには hook 関数も含んで
+  います。
+  また features.yaml は DEVSTACK_GATE_FEATURE_MATRIX により使用ファイルを
+  指定できる為、修正済みのファイルを下記に置いている(devstack-gate の変更
+  により随時修正する必要があるかも知れない)。ファイルの違いについては「
+  環境構築手順」参照。
+
+    https://github.com/osrg/ofaci-inst/blob/master/slave/features.yaml
+    https://github.com/osrg/ofaci-inst/blob/master/slave/features.yaml.no_ext
 
 
 hook 関数例:
@@ -346,6 +353,10 @@ export -f post_test_hook
   OFA 情報採取スクリプト例
 
     https://github.com/osrg/ofaci-inst/blob/master/slave/get_ofalog.sh
+
+  devstack-gate master を使用する場合の Jenkins job 設定の Execute Build Shell例
+
+    https://github.com/osrg/ofaci-inst/blob/master/samples/jenkins_build_shell.ofa
 
 
 CI 運用に関する補足
