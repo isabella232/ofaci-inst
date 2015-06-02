@@ -1,0 +1,12 @@
+/var/log/check_zuul.log {
+    rotate 2
+    daily
+    compress
+    missingok
+    notifempty
+    delaycompress
+    postrotate
+        service check_zuul stop
+        service check_zuul start
+    endscript
+}

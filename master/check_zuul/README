@@ -1,0 +1,12 @@
+check_zuul monitors on a master node if zuul works well.
+If the zuul is in a bad condition, script will restart zuul and zuul-merger.
+Edit zuul_check_data if you have string which you want to check.
+
+installation
+
+# cp check_zuul.init /etc/init.d/check_zuul
+# cp check_zuul.sh check_zuul_wrap.sh /usr/local/bin/
+# cp check_zuul.logrotate /etc/logrotate.d/check_zuul
+# cp zuul_check_data /var/log/zuul/
+# update-rc.d check_zuul defaults 90
+# service check_zuul start|stop

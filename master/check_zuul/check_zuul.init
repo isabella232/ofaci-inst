@@ -1,0 +1,53 @@
+#! /bin/sh
+### BEGIN INIT INFO
+# Provides:          check_zuul
+# Required-Start:    $libvirt-bin
+# Required-Stop:
+# Default-Start:     2 3 4 5
+# Default-Stop:
+# Short-Description: check zuul condition
+### END INIT INFO
+#set -x
+
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+DAEMON=/usr/local/bin/check_zuul_wrap.sh
+DAEMON_INT=/usr/local/bin/check_zuul.sh
+NAME=check_zuul
+NAME_STOP=check_zuul
+DESC="checking Zuul status"
+PIDFILE=/var/run/$NAME.pid
+
+test -f "$DAEMON" || exit 0
+umask 022
+
+# our configuration file
+DEFAULT=/etc/default/check_zuul
+
+# ...overriden in the configuration file
+test -r "$DEFAULT" && . "$DEFAULT"
+
+set -e 
+status=0
+
+. /lib/lsb/init-functions
+
+case "$1" in
+  start)
+        log_daemon_msg "Starting $DESC" "$NAME"
+        start-stop-daemon --start --quiet --pidfile $PIDFILE \
+            --exec $DAEMON || status=$?
+        log_end_msg $status
+        ;;
+  stop)
+        pkill $NAME_STOP || status=$?
+        log_end_msg $status
+        ;;
+  status)
+        ;;
+  *)
+        log_failure_msg "Usage: $0 {start|stop}"
+        exit 1
+        ;;
+esac
+
+exit $status
