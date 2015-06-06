@@ -10,17 +10,17 @@ pipelines:
     trigger:
       gerrit:
         - event: patchset-created
-          branch: ^master$
+          branch: ^(master|stable/.*)$
         - event: change-restored
-          branch: ^master$
+          branch: ^(master|stable/.*)$
         # Change "myvendor" below to your vendor's name to add a custom
         # recheck trigger that runs the check pipeline jobs when someone
         # adds a comment to a review that says "recheck $VENDOR".
         - event: comment-added
-          branch: ^master$
+          branch: ^(master|stable/.*)$
           comment: (?i)^(Patch Set [0-9]+:)?( [\w\\+-]*)*(\n\n)?\s*(ryu-recheck|recheck)\s*$
 #        - event: comment-added
-#          branch: ^master$
+#          branch: ^(master|stable/.*)$
 #          comment: (?i)^(Patch Set [0-9]+:)?( [\w\\+-]*)*(\n\n)?\s*recheck(( (?:bug|lp)[\s#:]*(\d+))|( myvendor))\s*$
 #    success:
 #      gerrit:
@@ -33,6 +33,7 @@ jobs:
   - name: ^.*$
     parameter-function: set_node_options_default_trusty
   - name: ^check-tempest-dsvm.*$
+    branch: ^(master).*$
     parameter-function: set_log_url
     success-pattern: http://180.37.183.32/ryuci/{build.parameters[LOG_PATH]}
     failure-pattern: http://180.37.183.32/ryuci/{build.parameters[LOG_PATH]}
@@ -42,6 +43,6 @@ projects:
     check:
       - check-tempest-dsvm-ryuplugin
       - check-tempest-dsvm-ofagent
-#  - name: stackforge/networking-ofagent
-#    check:
-#      - check-tempest-dsvm-ofagent
+  - name: stackforge/networking-ofagent
+    check:
+      - check-tempest-dsvm-ofagent
