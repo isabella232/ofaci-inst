@@ -1,0 +1,19 @@
+#!/bin/bash -xe
+export DEVSTACK_GATE_3PPRJ_BASE=osrg
+export DEVSTACK_GATE_3PBRANCH=ofaci_20141211_latest_jenkins_and_no_split_tree
+export PYTHONUNBUFFERED=true
+export DEVSTACK_GATE_TIMEOUT=60
+export DEVSTACK_GATE_NEUTRON=1
+export DEVSTACK_GATE_TEMPEST=1
+export DEVSTACK_GATE_RYUPLUGIN=1
+export SKIP_DEVSTACK_GATE_PROJECT=1
+export TEMPEST_CONCURRENCY=1
+DEVSTACK_GATE_TEMPEST_REGEX=tempest.api.network.test_networks
+DEVSTACK_GATE_TEMPEST_REGEX="$DEVSTACK_GATE_TEMPEST_REGEX tempest.api.network.test_floating_ips"
+DEVSTACK_GATE_TEMPEST_REGEX="$DEVSTACK_GATE_TEMPEST_REGEX tempest.api.network.test_security_groups"
+DEVSTACK_GATE_TEMPEST_REGEX="$DEVSTACK_GATE_TEMPEST_REGEX tempest.api.network.test_security_groups_negative"
+DEVSTACK_GATE_TEMPEST_REGEX="$DEVSTACK_GATE_TEMPEST_REGEX tempest.api.network.test_load_balancer"
+DEVSTACK_GATE_TEMPEST_REGEX="$DEVSTACK_GATE_TEMPEST_REGEX tempest.api.network.test_service_type_management"
+export DEVSTACK_GATE_TEMPEST_REGEX
+cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
+./safe-devstack-vm-gate-wrap.sh

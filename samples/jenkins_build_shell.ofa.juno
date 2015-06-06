@@ -1,0 +1,50 @@
+#!/bin/bash -xe
+export DEVSTACK_GATE_3PPRJ_BASE=osrg
+export DEVSTACK_GATE_3PBRANCH=ofaci_20141211_latest_jenkins_and_no_split_tree
+export PYTHONUNBUFFERED=true
+export DEVSTACK_GATE_TIMEOUT=120
+export DEVSTACK_GATE_NEUTRON=1
+export DEVSTACK_GATE_TEMPEST=1
+export DEVSTACK_GATE_OFAGENT=1
+export SKIP_DEVSTACK_GATE_PROJECT=1
+export TEMPEST_CONCURRENCY=1
+DEVSTACK_GATE_TEMPEST_REGEX=tempest.api.network
+if true; then
+DEVSTACK_GATE_TEMPEST_REGEX="$DEVSTACK_GATE_TEMPEST_REGEX tempest.scenario.test_network_basic_ops"
+else
+DEVSTACK_GATE_TEMPEST_REGEX="$DEVSTACK_GATE_TEMPEST_REGEX tempest.scenario.test_network_basic_ops.TestNetworkBasicOps.test_hotplug_nic"
+DEVSTACK_GATE_TEMPEST_REGEX="$DEVSTACK_GATE_TEMPEST_REGEX tempest.scenario.test_network_basic_ops.TestNetworkBasicOps.test_network_basic_ops"
+DEVSTACK_GATE_TEMPEST_REGEX="$DEVSTACK_GATE_TEMPEST_REGEX tempest.scenario.test_network_basic_ops.TestNetworkBasicOps.test_subnet_details"
+##DEVSTACK_GATE_TEMPEST_REGEX="$DEVSTACK_GATE_TEMPEST_REGEX tempest.scenario.test_network_basic_ops.TestNetworkBasicOps.test_update_instance_port_admin_state"
+DEVSTACK_GATE_TEMPEST_REGEX="$DEVSTACK_GATE_TEMPEST_REGEX tempest.scenario.test_network_basic_ops.TestNetworkBasicOps.test_update_router_admin_state"
+fi
+if false; then
+DEVSTACK_GATE_TEMPEST_REGEX="$DEVSTACK_GATE_TEMPEST_REGEX tempest.scenario.test_network_advanced_server_ops"
+else
+DEVSTACK_GATE_TEMPEST_REGEX="$DEVSTACK_GATE_TEMPEST_REGEX tempest.scenario.test_network_advanced_server_ops.TestNetworkAdvancedServerOps.test_server_connectivity_pause_unpause"
+DEVSTACK_GATE_TEMPEST_REGEX="$DEVSTACK_GATE_TEMPEST_REGEX tempest.scenario.test_network_advanced_server_ops.TestNetworkAdvancedServerOps.test_server_connectivity_reboot"
+#DEVSTACK_GATE_TEMPEST_REGEX="$DEVSTACK_GATE_TEMPEST_REGEX tempest.scenario.test_network_advanced_server_ops.TestNetworkAdvancedServerOps.test_server_connectivity_rebuild"
+DEVSTACK_GATE_TEMPEST_REGEX="$DEVSTACK_GATE_TEMPEST_REGEX tempest.scenario.test_network_advanced_server_ops.TestNetworkAdvancedServerOps.test_server_connectivity_resize"
+DEVSTACK_GATE_TEMPEST_REGEX="$DEVSTACK_GATE_TEMPEST_REGEX tempest.scenario.test_network_advanced_server_ops.TestNetworkAdvancedServerOps.test_server_connectivity_stop_start"
+DEVSTACK_GATE_TEMPEST_REGEX="$DEVSTACK_GATE_TEMPEST_REGEX tempest.scenario.test_network_advanced_server_ops.TestNetworkAdvancedServerOps.test_server_connectivity_suspend_resume"
+fi
+DEVSTACK_GATE_TEMPEST_REGEX="$DEVSTACK_GATE_TEMPEST_REGEX tempest.scenario.test_security_groups_basic_ops"
+export DEVSTACK_GATE_TEMPEST_REGEX
+function pre_test_hook {
+    #sudo ovs-vsctl set Controller br-int inactivity_probe=30000
+    if [ -e "$WORKSPACE/81-tempest.sh" ]; then
+         sed -e '/ping_timeout/s/ping_timeout.*$/ping_timeout 300/' -e '/ssh_timeout/s/ssh_timeout.*$/ssh_timeout 196/' $WORKSPACE/81-tempest.sh > $WORKSPACE/81-tempest.sh.tmp
+         mv $WORKSPACE/81-tempest.sh.tmp $WORKSPACE/81-tempest.sh
+         sudo cp $WORKSPACE/81-tempest.sh /opt/stack/new/devstack/extras.d/
+         sudo chown stack:stack /opt/stack/new/devstack/extras.d/81-tempest.sh
+    fi
+}
+export -f pre_test_hook
+function post_test_hook {
+    if [ -e "$WORKSPACE/get_ofalog.sh" ]; then
+        $WORKSPACE/get_ofalog.sh
+    fi
+}
+export -f post_test_hook
+cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
+./safe-devstack-vm-gate-wrap.sh
