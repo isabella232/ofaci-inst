@@ -60,3 +60,20 @@ projects:
       - check-tempest-dsvm-ofagent
       - check-tempest-dsvm-k-ofagent
       - check-tempest-dsvm-j-ofagent
+  - name: openstack/neutron-fwaas
+  - name: openstack/neutron-lbaas
+  - name: openstack/neutron-vpnaas
+  - name: openstack/barbican
+  - name: openstack/cinder
+  - name: openstack/nova
+  - name: openstack/oslo.config
+  - name: openstack/oslo.db
+  - name: openstack/oslo.messaging
+  - name: openstack/oslo.rootwrap
+  - name: openstack/oslo.utils
+  - name: openstack/requirements
+  - name: openstack/tempest
+  - name: openstack-dev/devstack
+  - name: openstack-infra/irc-meetings
+  - name: openstack-infra/project-config
+  - name: openstack-infra/system-config
