@@ -438,7 +438,7 @@ projects:
     check:
       - check-tempest-dsvm-ryuplugin
       - check-tempest-dsvm-ofagent
-#  - name: stackforge/networking-ofagent
+#  - name: openstack/networking-ofagent
 #    check:
 #      - check-tempest-dsvm-ofagent
 ubuntu@master:~$
@@ -463,11 +463,11 @@ ubuntu@master:~$
   (現在パスワードは使用していません)
 - Manage Jenkins(Jenkinsの管理) > Manage Credentials から認証情報を確認します
   [Fig6]
-- kilo 以降では ofagent のリポジトリが stackforge に分離しているので、stckforge
-  からのトリガも処理します。その為に /etc/zuul/layout/layout.yaml の下
-  記の部分のコメントを外します。
+- kilo 以降では ofagent のリポジトリが networking-ofagent に分離しているので、
+  networking-ofagent からのトリガも処理します。その為に /etc/zuul/layout/layout.yaml
+  の下記の部分のコメントを外します。
 
-      #  - name: stackforge/networking-ofagent
+      #  - name: openstack/networking-ofagent
       #    check:
       #      - check-tempest-dsvm-ofagent
 
@@ -1129,7 +1129,7 @@ projects:
     check:
       - check-tempest-dsvm-ryuplugin
       - check-tempest-dsvm-ofagent
-#  - name: stackforge/networking-ofagent
+#  - name: openstack/networking-ofagent
 #    check:
 #      - check-tempest-dsvm-ofagent
 ubuntu@smaster:~$

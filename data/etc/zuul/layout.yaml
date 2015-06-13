@@ -43,7 +43,7 @@ projects:
     check:
       - check-tempest-dsvm-ryuplugin
       - check-tempest-dsvm-ofagent
-  - name: stackforge/networking-ofagent
+  - name: openstack/networking-ofagent
     check:
       - check-tempest-dsvm-ofagent
   - name: openstack/neutron-fwaas
