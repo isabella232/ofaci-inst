@@ -14,6 +14,7 @@ if is_service_enabled tempest; then
         echo_summary "Add Tempest configuration"
         iniset $TEMPEST_CONFIG compute ping_timeout 300
         iniset $TEMPEST_CONFIG compute ssh_timeout 196
+        sleep 30
         sudo ovs-vsctl set Controller br-int inactivity_probe=30000
     elif [[ "$1" == "stack" && "$2" == "post-extra" ]]; then
         # no-op
