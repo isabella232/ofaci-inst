@@ -60,9 +60,16 @@ projects:
       - check-tempest-dsvm-ofagent
       - check-tempest-dsvm-k-ofagent
       - check-tempest-dsvm-j-ofagent
+  - name: openstack/networking-bgpvpn
+  - name: openstack/networking-cisco
+  - name: openstack/networking-l2gw
+  - name: openstack/networking-midonet
+  - name: openstack/networking-odl
+  - name: openstack/networking-ovn
   - name: openstack/neutron-fwaas
   - name: openstack/neutron-lbaas
   - name: openstack/neutron-vpnaas
+  - name: openstack/neutron-specs
   - name: openstack/barbican
   - name: openstack/cinder
   - name: openstack/nova
@@ -77,3 +84,18 @@ projects:
   - name: openstack-infra/irc-meetings
   - name: openstack-infra/project-config
   - name: openstack-infra/system-config
+  - name: stackforge/networking-6wind
+  - name: stackforge/networking-arista
+  - name: stackforge/networking-bagpipe-l2
+  - name: stackforge/networking-bigswitch
+  - name: stackforge/networking-brocade
+  - name: stackforge/networking-edge-vpn
+  - name: stackforge/networking-hyperv
+  - name: stackforge/networking-ibm
+  - name: stackforge/networking-mlnx
+  - name: stackforge/networking-nec
+  - name: stackforge/networking-ovs-dpdk
+  - name: stackforge/networking-plumgrid
+  - name: stackforge/networking-portforwarding
+  - name: stackforge/networking-vsphere
+  - name: stackforge/networking-zvm
