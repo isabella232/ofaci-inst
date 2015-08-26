@@ -27,6 +27,9 @@ CHECK_CNT=0
 CHECK_INT_ZUUL=0
 JENKINS_CLI=/usr/local/jenkins/jenkins-cli.jar
 TRB_MAX=${TRB_MAX:-300}
+ONE_MSG_CNT=${ONE_MSG_CNT:-10}
+CHECK_MSG_CNT=${CHECK_MSG_CNT:-200}
+ERR_MSG_CNT=${ERR_MSG_CNT:-150}
 ZUUL_LOOP_CNT=0
 ZUUL_FAIL_CNT=0
 ZUUL_FAIL_TOTAL=0
@@ -118,7 +121,10 @@ function check_zuul_log {
     local taillog
     local matchlog
     local str
+    local in_trouble
+    local err_cnt
 
+    in_trouble=false
     taillog=`tail -n 20 $ZUUL_LOG_FILE`
     for (( i=0; i < ${#ZUUL_FAIL_STR[@]}; ++i ))
     do
@@ -126,10 +132,18 @@ function check_zuul_log {
         matchlog=`echo "$taillog" | grep "$str"`
         if [ -n "$matchlog" -a "x${matchlog}" != "x${LAST_ZUUL_LOG[$i]}" ]; then
             LAST_ZUUL_LOG[$i]="$matchlog"
-            echo "Currently zuul is in trouble"
+            echo "Currently zuul is in trouble from zuul log"
+            err_cnt=`tail -n $TAIL_LINES $ZUUL_LOG_FILE | grep "$str" | wc -l`
             ZUUL_FAIL_CNT=$((++ZUUL_FAIL_CNT))
             if [[ $(($SLEEP_SEC*$ZUUL_FAIL_CNT)) -ge $TRB_MAX ]]; then
                 echo "fail count reached the max"
+                in_trouble=true
+            fi
+            if [[ $err_cnt -ge $ERR_MSG_CNT ]]; then
+                echo "error message count reached the max: $err_cnt"
+                in_trouble=true
+            fi
+            if [[ "$in_trouble" == 'true' ]]; then
                 ZUUL_FAIL_CNT=0
                 ZUUL_FAIL_TOTAL=0
                 return 1
@@ -170,7 +184,7 @@ function check_zuul_debug_log {
         matchlog=`echo "$taillog" | grep "$str"`
         if [ -n "$matchlog" -a "x${matchlog}" != "x${LAST_ZUUL_DBGLOG[$i]}" ]; then
             LAST_ZUUL_DBGLOG[$i]="$matchlog"
-            echo "Currently zuul in trouble"
+            echo "Currently zuul in trouble from debug log"
             ZUUL_DEBUG_CNT=$((++ZUUL_DEBUG_CNT))
             if [[ $(($SLEEP_SEC*$ZUUL_DEBUG_CNT)) -ge $TRB_MAX ]]; then
                 echo "debug fail count reached the max"
@@ -215,6 +229,7 @@ else
     #SLEEP_SEC=$((60/$MAX_LOOP))
 fi
 TOTAL_FAIL_MAX=$(($TRB_MAX/$SLEEP_SEC))
+TAIL_LINES=$(($ONE_MSG_CNT*$CHECK_MSG_CNT))
 if [[ -n "$ZUUL_FAIL_STR_FILE" ]]; then
     ZUUL_FAIL_STR=()
     exec < $ZUUL_FAIL_STR_FILE
@@ -234,6 +249,7 @@ declare -p MAX_LOOP SLEEP_SEC COUNT
 declare -p TRB_MAX TOTAL_FAIL_MAX CHECK_INT_ZUUL
 declare -p ZUUL_FAIL_CNT ZUUL_DEBUG_CNT
 declare -p ZUUL_FAIL_STR ZUUL_DEBUG_STR
+declare -p TAIL_LINES ERR_MSG_CNT
 echo "sleep every $SLEEP_SEC sec"
 while [ $COUNT -lt $MAX_LOOP ]; do
     sleep $SLEEP_SEC
