@@ -130,7 +130,12 @@ function check_zuul_log {
     do
         str=${ZUUL_FAIL_STR[$i]}
         matchlog=`echo "$taillog" | grep "$str"`
-        if [ -n "$matchlog" -a "x${matchlog}" != "x${LAST_ZUUL_LOG[$i]}" ]; then
+        if [[ -z "$matchlog" ]]; then
+            continue
+        fi
+        if [[ "x${matchlog}" == "x${LAST_ZUUL_LOG[$i]}" ]]; then
+            return 0
+        else
             LAST_ZUUL_LOG[$i]="$matchlog"
             echo "Currently zuul is in trouble from zuul log"
             err_cnt=`tail -n $TAIL_LINES $ZUUL_LOG_FILE | grep "$str" | wc -l`
@@ -182,7 +187,12 @@ function check_zuul_debug_log {
     do
         str=${ZUUL_DEBUG_STR[$i]}
         matchlog=`echo "$taillog" | grep "$str"`
-        if [ -n "$matchlog" -a "x${matchlog}" != "x${LAST_ZUUL_DBGLOG[$i]}" ]; then
+        if [[ -z "$matchlog" ]]; then
+            continue
+        fi
+        if [[ "x${matchlog}" == "x${LAST_ZUUL_DBGLOG[$i]}" ]]; then
+            return 0
+        else
             LAST_ZUUL_DBGLOG[$i]="$matchlog"
             echo "Currently zuul in trouble from debug log"
             ZUUL_DEBUG_CNT=$((++ZUUL_DEBUG_CNT))
