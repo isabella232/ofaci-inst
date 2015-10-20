@@ -1,9 +1,10 @@
 config:
   default:
-    master: [default, ceilometer, glance, horizon, nova, swift, cinder, keystone, heat, sahara]
-    kilo: [default, ceilometer, glance, horizon, nova, swift, cinder, keystone, heat, sahara]
-    juno: [default, ceilometer, glance, horizon, nova, swift, cinder, keystone, heat, sahara]
-    icehouse: [default, ceilometer, glance, horizon, nova, swift, cinder, keystone, heat]
+    master: [default, ceilometer, glance, horizon, nova, swift, cinder, keystone]
+    liberty: [default, ceilometer, glance, horizon, nova, swift, cinder, keystone]
+    kilo: [default, ceilometer, glance, horizon, nova, swift, cinder, keystone]
+    juno: [default, ceilometer, glance, horizon, nova, swift, cinder, keystone]
+    icehouse: [default, ceilometer, glance, horizon, nova, swift, cinder, keystone]
     # This can be used by functional jobs that only want their dependencies installed
     # and don't need to incur the overhead of installing all services in the process.
     no_services: [default]
@@ -14,7 +15,7 @@ config:
     features: [postgresql]
   # feature changes for different test matrixes
   grenade:
-    rm-features: [trove, sahara, heat]
+    rm-features: [trove, sahara]
   tempest:
     features: [tempest]
   # feature changes for different configs of existing services
@@ -40,12 +41,8 @@ config:
     features: [zeromq]
   ceph:
     features: [ceph]
-  ofagent:
-    features: [ofagent]
-    rm-features: [ceilometer, swift, horizon, heat, trove, sahara, grenade]
-  ryuplugin:
-    features: [ryuplugin]
-    rm-features: [ceilometer, swift, horizon, heat, trove, sahara, grenade]
+  heat:
+    features: [heat]
 
 branches:
   # The value of ""default" is the name of the "trunk" branch
@@ -91,8 +88,10 @@ features:
 
   neutron:
     base:
-      services: [quantum, q-svc, q-agt, q-dhcp, q-l3, q-meta, q-lbaas, q-vpn, q-fwaas, q-metering]
+      services: [quantum, q-svc, q-agt, q-dhcp, q-l3, q-meta, q-lbaas, q-fwaas, q-metering]
       rm-services: [n-net]
+    kilo:
+      services: [q-vpn]
 
   swift:
     base:
@@ -150,12 +149,3 @@ features:
   ceph:
     base:
       services: [ceph]
-
-  ofagent:
-    base:
-      rm-services: [q-lbaas, q-vpn, q-fwaas]
-
-  ryuplugin:
-    base:
-      services: [ryu]
-      rm-services: []
