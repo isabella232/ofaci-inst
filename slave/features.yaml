@@ -43,6 +43,12 @@ config:
     features: [ceph]
   heat:
     features: [heat]
+  ofagent:
+    features: [ofagent]
+    rm-features: [ceilometer, swift, horizon, heat, trove, sahara, grenade]
+  ryuplugin:
+    features: [ryuplugin]
+    rm-features: [ceilometer, swift, horizon, heat, trove, sahara, grenade]
 
 branches:
   # The value of ""default" is the name of the "trunk" branch
@@ -154,3 +160,12 @@ features:
   ceph:
     base:
       services: [ceph]
+
+  ofagent:
+    base:
+      rm-services: []
+
+  ryuplugin:
+    base:
+      services: [ryu]
+      rm-services: []
