@@ -34,20 +34,24 @@ OpenStack Infra[1]が使用/開発している各種ソフトウェアを使った、OFA Project
         |                 | 
         +-----------------+
 
-中核となるのはマスターノードで実行されるZuul[2]です。Zuulには、Gerritスト
-リームイベントを監視し、テスト実行のスケジューリングを行い、Gearmanを経由
-してJenkinsにテストの実行を指示、テスト結果をGerritに報告するというような
-様々な機能があります。
-
-Jenkinsは、実行するテストの内容を管理し、Zuulからの指示でテストをスレーブ
-ノード上で実行、テスト結果のログをログサーバに転送します。
+中核となるのはマスターノードで実行されるZuul[2]です。
+Zuulは主に下記のような機能を持ちます。
+- Gerritストリームイベントを監視。
+- テスト実行のスケジューリング。
+- Gearmanを経由してJenkinsにテストの実行を指示。
+- テスト結果をGerritに報告。
+Jenkinsは、実行するテストのジョブを管理し下記の作業を行います。
+- Zuulからの指示でテストを実施するスレーブを決定しジョブを実行。
+- 同じ gerrit ID のジョブ(古いパッチセット)が既に実行中の場合、キャンセ
+  ルして新たなパッチセットでジョブを実行。
+- テスト結果のログをログサーバに転送。
 
 スレーブノードでは、Jenkinsからリモート操作でテストが実行されます。主に
 devstackの起動とtempestのテストを実行します。テスト後の状態をリセットす
-るためにテスト終了後にリブートを行います。リブート前に次のテストが割り当て
-られないように、テスト完了時にGearmanによって当該スレーブノードはオフライン
-にされます。スレーブノードは起動時に、JenkinsのCLIを使って自ノードをオン
-ラインにします。
+るためにテスト終了後にリブートを行います。リブート前に次のテストが割り
+当てられないように、テスト完了時にGearmanによって当該スレーブノードはオ
+フラインにされます。スレーブノードは起動時に、JenkinsのCLIを使って自ノー
+ドをオンラインにします。
 
 
 1: https://wiki.openstack.org/wiki/InfraTeam
@@ -57,8 +61,8 @@ devstackの起動とtempestのテストを実行します。テスト後の状態をリセットす
 構築手順
 ========
 
-基本的に、テスト環境はJay Pipes氏の記事[3]とAkihiro Motoki氏の記事[4]を参考
-に構築しました。
+基本的に、テスト環境はJay Pipes氏の記事[3]とAkihiro Motoki氏の記事[4]を
+参考に構築しました。
 必要となるソフトウェアのインストールやセットアップを行うスクリプトは、
 Jay Pipes氏が公開しているものやOpenStack InfraのものをOFA Project用に
 変更しました。必要な作業は極力スクリプトの実行のみで行われるように
@@ -98,16 +102,16 @@ CPU: Quad core以上のプロセッサ
 
 
   <Gateway/DNS>
-      | .1   master 用                          stable 用
-  ----+----------+-------------++++++---------------+-------------+----- 192.168.122.0/24
-                 | .10         |||||| .21〜26       | .11         | .41  
-            +----+----+   +----+-----+         +----+----+   +----+-----+
-            | master  |   |  slave1  |+        | smaster |   |  sslave1 |
-            |---------|   |----------||+       |---------|   |----------|
-            |   Zuul  |   | devstack |||+      |   Zuul  |   | devstack |
-            | Jenkins |   |  tempest ||||+     | Jenkins |   |  tempest |
-            |     ... |   |      ... |||||+    |     ... |   |      ... |
-            +---------+   +----------+|||||    +---------+   +----------+
+      | .1   master 用                         
+  ----+----------+-------------++++++---------- 192.168.122.0/24
+                 | .10         |||||| .21〜26
+            +----+----+   +----+-----+     
+            | master  |   |  slave1  |+    
+            |---------|   |----------||+   
+            |   Zuul  |   | devstack |||+  
+            | Jenkins |   |  tempest ||||+ 
+            |     ... |   |      ... |||||+
+            +---------+   +----------+|||||
                            +----------+||||
                             +----------+|||
                              +----------+||
@@ -118,20 +122,24 @@ OpenStack master テスト用として
 - ZuulおよびJenkinsが稼働するマスターノード(master)が1台。
 - マスターノードのJenkinsからリモート制御で実際にテストを実行するスレー
   ブノード(slave1〜6)が6台。
-OpenStack stable テスト用として
-- マスターノード(smaster)が1台。
-- スレーブノード(sslave1)が1台。
-の合計9つのVMをテストサーバ上に作成します。
+の合計7つのVMをテストサーバ上に作成します。
+(slave 数はCI の負荷により調整します)
 仮想ネットワークはlibvirtの標準(default/NAT)をそのまま使用します。
-また、ホストのOS並びにVMのOSには、Ubuntu 12.04.4 LTS Server 64bit版を使用
+また、ホストのOS並びにVMのOSには、Ubuntu 14.04 LTS Server 64bit版を使用
 します。
+slave のノード数や VM のスペックは CI の負荷に応じて変更が必要かもしれ
+ません。
 
 
 インストールスクリプトの準備
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-まず、インストールスクリプトをgithubから取得します。この作業はテストサーバ
-のホスト上で行うものとします。
+まず、インストールスクリプトをgithubから取得します。この作業はテストサー
+バのホスト上で行うものとします。
+リポジトリのソース構成の変化や、devstack-gate の改良により Juno 以前と
+以後で CI の構成が異なります。環境構築には下記のブランチを使用下さい。
+Juno 以前: ofaci_20141211_latest_jenkins_and_no_split_tree
+Kilo 以降: master
 
     $ git clone https://github.com/osrg/ofaci-inst
     $ ls ofaci-inst
@@ -142,8 +150,8 @@ OpenStack stable テスト用として
 
 (1) 変数の設定
 
-ofaci-inst/data/vars.shにインストールスクリプトが使用する各種変数が記述されて
-いるので、環境に合わせて値をセットします。
+ofaci-inst/data/vars.shにインストールスクリプトが使用する各種変数が記述
+されているので、環境に合わせて値をセットします。
 
     $ cat ofaci-inst/data/vars.sh
     export UPSTREAM_GERRIT_HOST_PUBLIC_KEY="ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDtdLzDzG6qmejiZq5BxDqxkN71W08xuQWVZ+6784SpsXTUujKT49lNCXmH+IHijsRaigU9cVFkWErVez0Q+NtUe077c5s50zCrL7EwH5/aiwaYklHF566TO7ctOJBLLsoVOUlJGpUAjM4veG9XMz0KhTP9qYK3zqNOcPV++551bQu1rc3kR8R8C/etmP60zMhVkUAdgyPWFZbmKlrBv1SxIpvjSo5STZzSRS7DK5/D9BaWS3zOcl5Pqtv0FVjm83dmQJxMPEjFo8e0T4Gq/noxYafQse4811/Ucmxj8J5rlJchakfxJz827w3MWYR4Ku+X3QAy/deBuvzUn3z35Zwr"
@@ -259,20 +267,20 @@ jenkins_key、jenkins_key.pubは、以下のコマンドで新しいsshキーを作ることが
 ^^^^^^^^^^^^^^^^
 
 virt-managerを使い、以下の設定内容のVMを作成します。
-Ubuntu 14.04.1 LTS Server 64bitのisoイメージ[5]が必要です。
+Ubuntu 14.04 LTS Server 64bitのisoイメージ[5]が必要です。
 
 ====================== =====================================
 Name                   master
 ---------------------- -------------------------------------
 OS Type                Linux
 ---------------------- -------------------------------------
-Version                Ubuntu 12.04 LTS (Precise Pangolin)
+Version                Ubuntu 14.04 LTS (Precise Pangolin)
 ---------------------- -------------------------------------
-Memory (RAM)           2048MB
+Memory (RAM)           12288MB
 ---------------------- -------------------------------------
 CPUs                   1
 ---------------------- -------------------------------------
-Create a disk image    10GB
+Create a disk image    27GB
 on the computer's 
 hard driver
 ---------------------- -------------------------------------
@@ -282,6 +290,10 @@ Virt Type              kvm
 ---------------------- -------------------------------------
 Architecture           x86_64
 ====================== =====================================
+
+ルートパーティションの容量を圧迫しない様に /var, /usr 等は別
+パーティションとして設定するのが良いと思われます。
+
 
 5: http://releases.ubuntu.com/14.04/ubuntu-14.04-server-amd64.iso
 
@@ -395,10 +407,10 @@ ubuntu@master:~$
 
 ubuntu@master:~$ sudo cat /etc/zuul/layout/layout.yaml
 includes:
-  - python-file: openstack_functions.py
+  - python-file: openstack_functions.py					1)
 
 pipelines:
-  - name: check
+  - name: check								2)
     description: Newly uploaded patchsets enter this pipeline to receive an initial +/-1 Verified vote from Jenkins.
     failure-message: Build failed. Leave a comment with 'ryu-recheck' to rerun a check. (Also 'recheck' is available.)
     manager: IndependentPipelineManager
@@ -406,70 +418,193 @@ pipelines:
     trigger:
       gerrit:
         - event: patchset-created
-          branch: ^master$
+          branch: ^(master|feature/.*|stable/.*)$
         - event: change-restored
-          branch: ^master$
+          branch: ^(master|feature/.*|stable/.*)$
         # Change "myvendor" below to your vendor's name to add a custom
         # recheck trigger that runs the check pipeline jobs when someone
         # adds a comment to a review that says "recheck $VENDOR".
-        - event: comment-added
-          branch: ^master$
+        - event: comment-added						3)
+          branch: ^(master|feature/.*|stable/.*)$
           comment: (?i)^(Patch Set [0-9]+:)?( [\w\\+-]*)*(\n\n)?\s*(ryu-recheck|recheck)\s*$
 #        - event: comment-added
-#          branch: ^master$
+#          branch: ^(master|feature/.*|stable/.*)$
 #          comment: (?i)^(Patch Set [0-9]+:)?( [\w\\+-]*)*(\n\n)?\s*recheck(( (?:bug|lp)[\s#:]*(\d+))|( myvendor))\s*$
-#    success:
-#      gerrit:
-#        verified: 1
-#    failure:
-#      gerrit:
-#        verified: 0
+    success:								4)
+      gerrit:
+        verified: 1
+    failure:
+      gerrit:
+        verified: 0
 
 jobs:
   - name: ^.*$
     parameter-function: set_node_options_default_trusty
-  - name: ^check-tempest-dsvm.*$
+  - name: ^check-tempest-dsvm-ofagent.*$				5)
+    branch: ^(master|feature/).*$
     parameter-function: set_log_url
     success-pattern: http://180.37.183.32/ryuci/{build.parameters[LOG_PATH]}
     failure-pattern: http://180.37.183.32/ryuci/{build.parameters[LOG_PATH]}
+    skip-if:								6)
+      - project: ^openstack/
+        all-files-match-any:
+          - ^.*\.rst$
+          - ^doc/.*$
+          - ^tools/.*$
+          - ^tox.ini$
+  - name: ^check-tempest-dsvm-k-ofagent.*$				5)
+    branch: ^(stable/kilo).*$
+    #voting: false
+    parameter-function: set_log_url
+    success-pattern: http://180.37.183.32/ryuci/{build.parameters[LOG_PATH]}
+    failure-pattern: http://180.37.183.32/ryuci/{build.parameters[LOG_PATH]}
+    skip-if:
+      - project: ^openstack/
+        all-files-match-any:
+          - ^.*\.rst$
+          - ^doc/.*$
+          - ^tools/.*$
+          - ^tox.ini$
+  - name: ^(check-tempest-dsvm-j-ofagent|check-tempest-dsvm-ryuplugin).*$	5)
+    branch: ^(stable/juno).*$
+    #voting: false
+    parameter-function: set_log_url
+    success-pattern: http://180.37.183.32/ryuci/{build.parameters[LOG_PATH]}
+    failure-pattern: http://180.37.183.32/ryuci/{build.parameters[LOG_PATH]}
+    skip-if:
+      - project: ^openstack/
+        all-files-match-any:
+          - ^.*\.rst$
+          - ^doc/.*$
+          - ^tools/.*$
+          - ^tox.ini$
 
 projects:
-  - name: openstack/neutron
+  - name: openstack/neutron					7)
     check:
-      - check-tempest-dsvm-ryuplugin
       - check-tempest-dsvm-ofagent
-#  - name: openstack/networking-ofagent
-#    check:
-#      - check-tempest-dsvm-ofagent
+      - check-tempest-dsvm-k-ofagent
+      - check-tempest-dsvm-j-ofagent
+      - check-tempest-dsvm-ryuplugin
+  - name: openstack/networking-ofagent				8)
+    check:
+      - check-tempest-dsvm-ofagent
+      - check-tempest-dsvm-k-ofagent
+      - check-tempest-dsvm-j-ofagent
+  - name: openstack/networking-bgpvpn				9)
+  - name: openstack/networking-cisco
+  - name: openstack/networking-l2gw
+  - name: openstack/networking-midonet
+  - name: openstack/networking-odl
+  - name: openstack/networking-ovn
+  - name: openstack/neutron-fwaas
+  - name: openstack/neutron-lbaas
+  - name: openstack/neutron-vpnaas
+  - name: openstack/neutron-specs
+  - name: openstack/barbican
+  - name: openstack/cinder
+  - name: openstack/nova
+  - name: openstack/oslo.config
+  - name: openstack/oslo.db
+  - name: openstack/oslo.messaging
+  - name: openstack/oslo.rootwrap
+  - name: openstack/oslo.utils
+  - name: openstack/requirements
+  - name: openstack/tempest
+  - name: openstack-dev/devstack
+  - name: openstack-infra/irc-meetings
+  - name: openstack-infra/project-config
+  - name: openstack-infra/system-config
+  - name: stackforge/networking-6wind
+  - name: stackforge/networking-arista
+  - name: stackforge/networking-bagpipe-l2
+  - name: stackforge/networking-bigswitch
+  - name: stackforge/networking-brocade
+  - name: stackforge/networking-edge-vpn
+  - name: stackforge/networking-hyperv
+  - name: stackforge/networking-ibm
+  - name: stackforge/networking-mlnx
+  - name: stackforge/networking-nec
+  - name: stackforge/networking-ovs-dpdk
+  - name: stackforge/networking-plumgrid
+  - name: stackforge/networking-portforwarding
+  - name: stackforge/networking-vsphere
+  - name: stackforge/networking-zvm
 ubuntu@master:~$
+
+
+上記では ofagent, ryup-lugin の master と stable branch の job を動作さ
+せる場合の設定例を示しています。
+
+1) include するマクロを指定
+2) ofagent, ryu-plugin 用のチェックキュー定義
+3) コメント追加時の振る舞いを定義
+4) job 成功、失敗時の振る舞いを定義
+   例では、成功時に +1, 失敗時には何もしない
+   コメントアウトしていると、成功、失敗時に何もしない。
+5) job の定義
+   処理する branch(ここで対象とする branch を指定する)
+   ログのパスを得るマクロ(set_log_url)の指定
+   成功、失敗時の表示形式
+6) 処理対象のフィルタリング。指定ファイルは無視される。
+7) neutron からのトリガで処理する job 名を定義
+8) kilo 以降では ofagent のリポジトリが networking-ofagent に分離しているので、
+   networking-ofagent からのトリガも処理
+9) zuul で cross-dependency のトリガを処理する為に、トリガの掛かりそうな
+   関連するプロジェクトの名前を列記。これは名前解決の為なので処理は書かない。
+
+check キューを複数処理する例のサンプルが下記より参照できます。
+ofagent, ryup-lugin と 検証用に ovs-native の job を動作させる
+場合の設定例になります。ofagent, ryup-lugin と ovs-native が別
+キューによる管理となっています。
+
+https://raw.github.com/osrg/ofaci-inst/master/samples/layout.yaml.add_ovs_native_job
 
 
 * Jenkinsの設定内容
 
 ブラウザでマスターノードのポート8080番に接続してJenkinsのGUIを表示します。
-- ジョブcheck-tempest-dsvm-ofagentとcheck-tempest-dsvm-ryupluginが登録されて
-  いることを確認します [Fig1]
+
+Juno リリース以前の場合の確認
+- ジョブcheck-tempest-dsvm-ofagentとcheck-tempest-dsvm-ryupluginが登録
+  されていることを確認します [Fig1]
 - Manage Jenkins(Jenkinsの管理) > Manage Plugins(プラグインの管理) > Installed
-  (インストール済み)から「Jenkins SCP publisher plugin」が導入されていること
-  を確認します [Fig2]
+  (インストール済み)から「Jenkins SCP publisher plugin」が導入されてい
+  ることを確認します [Fig2]
 - ジョブcheck-tempest-dsvm-ofagentの設定内容を確認します [Fig3]
-  kilo 以降では devtstack-gate の master が使用できる。メンテナンスの手
-  間削減の為および zuul 不備の対応上 master を使用する事を推奨。
-  (後述 devstack-gate master の使用手順参照)
 - ジョブcheck-tempest-dsvm-ryupluginの設定内容を確認します [Fig4]
-  ryu plugin は kilo で削除されたので kilo 以降の場合は本ジョブは削除する。
 - Manage Jenkins(Jenkinsの管理) > Configure System(システムの設定)からSCP
   repository hostsの設定内容を確認します [Fig5]
   (現在パスワードは使用していません)
 - Manage Jenkins(Jenkinsの管理) > Manage Credentials から認証情報を確認します
   [Fig6]
-- kilo 以降では ofagent のリポジトリが networking-ofagent に分離しているので、
-  networking-ofagent からのトリガも処理します。その為に /etc/zuul/layout/layout.yaml
-  の下記の部分のコメントを外します。
 
-      #  - name: openstack/networking-ofagent
-      #    check:
-      #      - check-tempest-dsvm-ofagent
+Build Execute shell の 3番目のサンプルファイルが下記より参照できます。
+- juno の ofagent 用
+    https://raw.github.com/osrg/ofaci-inst/master/samples/jenkins_build_shell.ofa.juno
+- ryu-plugin 用(juno まで)
+    https://raw.github.com/osrg/ofaci-inst/master/samples/jenkins_build_shell.ryu
+
+Kilo リリース以降の場合の確認
+- ジョブcheck-tempest-dsvm-ofagentとcheck-tempest-dsvm-ryupluginが登録
+  されていることを確認します [Fig1]
+- Manage Jenkins(Jenkinsの管理) > Manage Plugins(プラグインの管理) > Installed
+  (インストール済み)から「Jenkins SCP publisher plugin」が導入されてい
+  ることを確認します [Fig2]
+- ジョブcheck-tempest-dsvm-ofagentの設定内容を確認します [Fig3]
+  devtstack-gate は master を使用する設定になっています。
+- ジョブcheck-tempest-dsvm-ryupluginの設定内容を確認します [Fig4]
+  juno リリース以前の CI との互換の為残しています。ryu plugin は kilo 
+  で削除されたので本ジョブは削除します。
+- Manage Jenkins(Jenkinsの管理) > Configure System(システムの設定)からSCP
+  repository hostsの設定内容を確認します [Fig5]
+  (現在パスワードは使用していません)
+- Manage Jenkins(Jenkinsの管理) > Manage Credentials から認証情報を確認します
+  [Fig6]
+
+Build Execute shell の 3番目のサンプルファイルが下記より参照できます。
+- kilo 以降の ofagent 用
+    https://raw.github.com/osrg/ofaci-inst/master/samples/jenkins_build_shell.ofa
 
 
 *注意*
@@ -944,15 +1079,16 @@ Gearmanクライアントの有効化
 
 JenkinsのGearmanクライアントを有効にして、Zuulと連動するようにします。
 
-Manage Jenkins(Jenkinsの管理) > Configure System(システムの設定)からGearman
-Plugin Configを表示し、Enable Gearmanをチェックし、Saveボタンをクリックしま
-す。 [Fig7]
+Manage Jenkins(Jenkinsの管理) > Configure System(システムの設定)から
+Gearman Plugin Configを表示し、Enable Gearmanをチェックし、Saveボタンを
+クリックします。 [Fig7]
 
 
 zuulの状態確認
 ^^^^^^^^^^^^^^
 
-zuulのデバッグログでGerritストリームイベントを処理していることが確認できます。
+zuulのデバッグログでGerritストリームイベントを処理していることが確認で
+きます。
 
     ubuntu@master:~$ sudo tail -f /var/log/zuul/debug.log
     2014-04-02 18:10:22,858 DEBUG zuul.Scheduler: Processing trigger event
@@ -966,13 +1102,14 @@ zuulのデバッグログでGerritストリームイベントを処理していることが確認できます。
     t: <TriggerEvent comment-added openstack/neutron master 84667,1>
 
 また、zuulの状態はステータスページで確認することもできます。
-ブラウザでマスターノード(192.168.122.10:80)にアクセスするとステータスページ
-が確認できます。
+ブラウザでマスターノード(192.168.122.10:80)にアクセスするとステータスペー
+ジが確認できます。
 
 実行中のテストの状態は、Jenkinsの画面で確認できます。
 
-この時点では、テスト結果のGerritへの報告(vote)は無効になっています。有効に
-するには、/etc/zuul/layout/layout.yamlの以下の部分のコメントを外します。
+この時点では、テスト結果のGerritへの報告(vote)は無効になっています。有
+効にするには、/etc/zuul/layout/layout.yamlの以下の部分のコメントを外し
+ます。
 
     #    success:
     #      gerrit:
@@ -981,172 +1118,128 @@ zuulのデバッグログでGerritストリームイベントを処理していることが確認できます。
     #      gerrit:
     #        verified: 0
 
-verifiedの値がスコアになります。本来、failureの場合は-1を与えますが、現状
-では0のままで良いようです。
+verifiedの値がスコアになります。本来、failureの場合は-1を与えますが、現
+状Third party での voting は推奨されないので0のままで良いようです。
+詳細は下記 URL "Third Party CI Voting" 参照。
+
+http://git.openstack.org/cgit/openstack/neutron/tree/doc/source/policies/thirdparty-ci.rst
 
 
-devstack-gate master の使用手順
--------------------------------
+stable CI 環境の追加
+--------------------
 
-kilo 以降では devtstack-gate の master branch を使用して CI を実行でき
-ます。その手順を示します。
-jenkins check-tempest-dsvm-ofagent job 設定で下記の変更を行います。
+stable 版の OpenStack に対してもテストを行う必要があります。
+2通りの方法について説明します。
 
-1) Build Execute shell 1 の下記環境変数を master 用にする。
-      DEVSTACK_GATE_3PPRJ_BASE
-      DEVSTACK_GATE_3PBRANCH
-   下記の 1-a の指定を false から true にする。
+現状の master ノードに job を追加する場合
+-----------------------------------------
 
-Jenkins Build Execute shell 1 抜粋
+現状、初期イメージの VM で起動する仕組みを利用している為、jenkins 設定
+と master ノードの zuul 設定を修正するだけで良い。下記の要領で行う。
 
-----------
-#!/bin/bash -xe
-if false; then			<-- 1-a
-    export DEVSTACK_GATE_3PPRJ_BASE=openstack-infra
-    export DEVSTACK_GATE_3PBRANCH=master
-else
-    export DEVSTACK_GATE_3PPRJ_BASE=osrg
-    export DEVSTACK_GATE_3PBRANCH=ofaci
-fi
-...
-----------
+- stable job の作成
+  Jenkins ダッシュボード -> 新規ジョブ作成
+  で
+ 「ジョブ名」に新規ジョブ名
+    (現在の命名 check-tempest-dsvm-x-ofagent。x はリリース名頭文字)
+ 「既存ジョブのコピー」に現在の master のジョブ名
+    (現在 check-tempest-dsvm-ofagent)
+  job の説明と必要なら Execute Build Shell 等の編集を行う。
 
-2) Build Execute shell 3 の内容を下記ダウンロードファイル jenkins_build_shell.ofa
-   の内容と入れ替える。
-       wget https://raw.github.com/osrg/ofaci-inst/samples/jenkins_build_shell.ofa
-3) 設定保存。
+- zuul 設定修正
+  前述「Zuulの設定内容」- /etc/zuul/layout.yaml の説明で下記の修正を行う。
 
-*注意*
-  2015/4/10 時点で現用機では zuul の cross-repo 機能不備の為 extension
-  service(fwaas, lbaas, vpnaas, lbaas_agent_scheduler)を一時的に無効に
-  しています。この設定は下記の要領で check-tempest-dsvm-ofagent の設定
-  を修正し保存します。
-  不備内容は下記のものです。
-  - 現在の master node の zuul では cross-repo 機能がサポートされていな
-    い為 cross-repo 指定の gerrit job が登録されると zuul はそれを通常の
-    gerrit として扱う為、(依存先のリポジトリパッチが反映しない為)job が
-    fail する。
-  - 最新 zuul では cros-repo job 処理中に例外が発生する。
-  1) Build Execute shell 3 の DISABLE_NETWORK_API_EXTENSIONS 変数設定行
-     のコメントを削除し有効にする(下記 2-a)。
-  2) 同上の shell の features.yaml ダウンロードの処理を下記に変更する。
+  - 5) の部分を該当の stable 名で追加する。
+  - 7), 8) のセクションに追加する job 名を追加する。
 
-         wget https://raw.github.com/osrg/ofaci-inst/master/slave/features.yaml
-     を
-         wget https://raw.github.com/osrg/ofaci-inst/master/slave/features.yaml.no_ext
-         mv features.yaml.no_ext features.yaml
-     に変更(下記 2-b)
+- zuul のリスタート
 
-samples/jenkins_build_shell.ofa(Build Execute shell 3) 抜粋
+  # service zuul-merger stop
+  # service zuul stop
+  # service zuul start
+  # service zuul-merger start
 
-----------
-...
-DEVSTACK_LOCAL_CONFIG="$DEVSTACK_LOCAL_CONFIG LIBVIRT_TYPE=qemu"
-#DEVSTACK_LOCAL_CONFIG="$DEVSTACK_LOCAL_CONFIG DISABLE_NETWORK_API_EXTENSIONS=fwaas,lbaas,vpnaas,lbaas_agent_scheduler"		<-- 2-a
-DEVSTACK_LOCAL_CONFIG="$DEVSTACK_LOCAL_CONFIG DEVSTACK_GATE_ENABLE_HTTPD_MOD_WSGI_SERVICES=0"
-...
-if [ ! -e "$WORKSPACE/features.yaml" ]; then
-    if [ ! -e features.yaml ]; then
-        wget https://raw.github.com/osrg/ofaci-inst/master/slave/features.yaml		<-- 2-b
-    fi
-    if [ ! -e "$WORKSPACE/features.yaml" ]; then
-        cp features.yaml $WORKSPACE/features.yaml
-    fi
-fi
-...
-----------
+  運用中で落とせない場合は
+
+  # service zuul reload
 
 
-stable 用 master/slave VM の構築
---------------------------------
+新たに stable 用の master/slave VM の構築する場合
+-------------------------------------------------
+
+何らかの理由で別途テスト環境を分けて用意する場合は下記の手順で行える。
 
 stable 用 VM の作成
 ^^^^^^^^^^^^^^^^^^^
 
-stable 版の OpenStack に対してもテストを行う必要がある。
-master テスト環境の VM と共用して使い回す事はできるが、お互いの環境に
-よる影響を受ける為、master テスト環境とは別に stable 用の master/slave VM
-を作成する。
-(何らかの方法で初期状態の VM を立ち上げる仕組みを作れば、VM を共用する
-方法がメンテナンスの手間が省ける。)
-
 上述の構築手順に従い新たに master/slave を一つずつ作成。
+ホスト名、IPアドレスは重ならない様には適宜設定。
+取り敢えずは下記のパターンを想定している。
+- ホスト名はリリース名の頭文字
+- master IP は連番
+- slave IP は十番台の番号の連番
 
 ======== ==============
 ホスト名 IPアドレス
 -------- --------------
-smaster  192.168.122.11
+lmaster  192.168.122.12
 -------- --------------
-slave1   192.168.122.41
+llave1   192.168.122.31
 ======== ==============
 
-master VM 内の /etc/zuul/layout/layout.yaml のフィルタを master から stable/{code-name}
-に修正する。下記は stable/icehouse の場合の例(矢印の部分)。
+前述「Zuulの設定内容」- /etc/zuul/layout.yaml の説明で下記の修正を行う。
 
+- 5) の先頭の job 定義(check-tempest-dsvm-ofagent)部分を該当の stable 名
+  に修正する。他の余分な job 定義は削除する。
+- 7), 8) の部分で check-tempest-dsvm-ofagent 以外は削除する。
 
-ubuntu@smaster:~$ cat /etc/zuul/layout/layout.yaml
-includes:
-  - python-file: openstack_functions.py
+stable/mitaka を追加する場合の /etc/zuul/layout/layout.yaml の修正例
 
-pipelines:
-  - name: check
-    description: Newly uploaded patchsets enter this pipeline to receive an initial +/-1 Verified vote from Jenkins.
-    failure-message: Build failed. Leave a comment with 'ryu-recheck' to rerun a check. (Also 'recheck' is available.)
-    manager: IndependentPipelineManager
-    precedence: low
-    trigger:
+...
+    failure:
       gerrit:
-        - event: patchset-created
-          branch: ^stable/icehouse$		<--
-        - event: change-restored
-          branch: ^stable/icehouse$		<--
-        # Change "myvendor" below to your vendor's name to add a custom
-        # recheck trigger that runs the check pipeline jobs when someone
-        # adds a comment to a review that says "recheck $VENDOR".
-        - event: comment-added
-          branch: ^stable/icehouse$		<--
-          comment: (?i)^(Patch Set [0-9]+:)?( [\w\\+-]*)*(\n\n)?\s*(ryu-recheck|recheck)\s*$
-#        - event: comment-added
-#          branch: ^stable/icehouse$		<--
-#          comment: (?i)^(Patch Set [0-9]+:)?( [\w\\+-]*)*(\n\n)?\s*recheck(( (?:bug|lp)[\s#:]*(\d+))|( myvendor))\s*$
-#    success:
-#      gerrit:
-#        verified: 1
-#    failure:
-#      gerrit:
-#        verified: 0
+        verified: 0
 
 jobs:
   - name: ^.*$
     parameter-function: set_node_options_default_trusty
-  - name: ^check-tempest-dsvm.*$
+  - name: ^check-tempest-dsvm-ofagent.*$
+    branch: ^(stable/mitaka).*$				<-- 修正
     parameter-function: set_log_url
     success-pattern: http://180.37.183.32/ryuci/{build.parameters[LOG_PATH]}
     failure-pattern: http://180.37.183.32/ryuci/{build.parameters[LOG_PATH]}
+    skip-if:
+      - project: ^openstack/
+        all-files-match-any:
+          - ^.*\.rst$
+          - ^doc/.*$
+          - ^tools/.*$
+          - ^tox.ini$
 
 projects:
   - name: openstack/neutron
     check:
-      - check-tempest-dsvm-ryuplugin
       - check-tempest-dsvm-ofagent
-#  - name: openstack/networking-ofagent
-#    check:
-#      - check-tempest-dsvm-ofagent
-ubuntu@smaster:~$
+  - name: openstack/networking-ofagent
+    check:
+      - check-tempest-dsvm-ofagent
+  - name: openstack/networking-bgpvpn
+  - name: openstack/networking-cisco
+...
 
 
 新しい stable への切り替え
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-次の stable 版 release のタイミングで stable 環境の jenkins job を一時
+次の stable 版 release のタイミングで master 環境の jenkins job を一時
 停止し、下記の方法で stable 用 VM を手動で更新する。
 
 - master 環境の slave VM を clone して stable 環境の slave VM と取り換
   え ip アドレス等を stable 用に修正する。
-- stable 用 slave を新規に作成。
+- stable 用の jenkins 上で slave node を新規に追加。
 
-master VM 内の /etc/zuul/layout/layout.yaml の現在の stable フィルタを新しい
-stable フィルタに修正する。
+master VM 内の /etc/zuul/layout/layout.yaml の現在の stable フィルタを
+新しい stable フィルタに修正する。5) の部分。
 
 
 以上

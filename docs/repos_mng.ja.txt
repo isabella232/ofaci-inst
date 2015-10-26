@@ -27,20 +27,20 @@ https://github.com/osrg/system-config
 https://github.com/osrg/project-config
 
 ofaci-inst を除いたリポジトリは fork して OFA 用の branch を作成してい
-ます。
+ます。kilo 以降は devstack-gate は master を使用する為修正しません。
 
 - https://github.com/osrg/ofaci-inst
   OFA オリジナル。
   CI 毎の固有情報の保有と、環境のインストールを自動化。
-- https://github.com/osrg/devstack-gate
-  job 実行時にテストを実施するスクリプト。
-  master を OFA 用に修正。
-  juno 以前で使用。kilo では環境設定により master を使用できる。
 - https://github.com/osrg/os-ext-testing
   主に環境構築を自動化するツール。
   master を OFA 用に修正。
   但し現状 master は最新の openstack リポジトリに追随していないので
   rebase する事は無さそうです。
+- https://github.com/osrg/devstack-gate
+  juno 以前で使用。
+  job 実行時にテストを実施するスクリプト。
+  master を OFA 用に修正。
 - https://github.com/osrg/system-config
   環境構築の為のスクリプト。主に puppet の実行環境。
   master のある時点のもので branch 作成(現状修正は無し)。
@@ -61,9 +61,12 @@ branch としては現在下記のものがあります。
     jekins 1.533 で動作した時の branch で念の為作成したもの。
     今後は使用する機会はない筈です。
   ofaci_20141211_latest_jenkins_and_no_split_tree
+    juno 用としてはこの branch を使用する。
     現在 advanced service と ofagent は他リポジトリに分岐している。この
-    branch は分岐する前の状態を保持している。
-    juno では分岐していないので、juno 用としてはこの branch を使用する。
+    branch は分岐する前の状態を保持している。juno は分岐前のリリースな
+    のでこれを使用する。
+  ofaci_20150520_support_devstack-gate_master
+    devstack-gate をカスタマイズ版ではなく標準の master を使用して処理。
 
 リポジトリ環境を修正する場合の手順は「リポジトリ環境の更新」を参照。
 
@@ -101,7 +104,7 @@ $ ./install_node.sh master|slave
 
 を実行します。
 下記 install_node.sh スクリプトの 1), 2), 3)(14,15,18 行目)をコメントに
-します。
+して master を参照する様にします。
 
 $ cat -n install_node.sh
      1  #!/bin/bash
@@ -164,9 +167,7 @@ ofaci branch は OFA 用 CI 環境の最新の commit を保持します。
    現在稼働中の CI では一部 ofaci branch を参照している為下記の手順で置
    き換えます。
    a) 現在の jenkins を一時停止。
-      現在動作中の CI 環境ではテストの際 devstack-gate リポジトリを参照
-      (ofaci branch を clone して使用)している為 jenkins を一時停止し
-      現在の job が終了するまで待つ。
+      jenkins を一時停止し現在の job が終了するまで待つ。
    b) branch の変更
       ofci -> ofaci_yyyymmdd
       ofaci-dev -> ofaci
@@ -185,20 +186,22 @@ ofaci branch は OFA 用 CI 環境の最新の commit を保持します。
 上述 1) の部分の詳細を説明します。
 各リポジトリは下記の手順で修正を行い確認します。
 
-
 - https://github.com/osrg/ofaci-inst
   ofaci から ofaci-dev を作成し修正
+- https://github.com/osrg/os-ext-testing
+  ofaci から ofaci-dev を作成し修正
+- https://github.com/osrg/system-config
+  openstack の master を参照する様にして置く(前述 install_node.sh の修正)
+- https://github.com/osrg/project-config
+  openstack の master を参照する様にして置く(前述 install_node.sh の修正)
+
+kilo 以降のリリースでは下記のものは openstack master リポジトリを使用し
+ている為、基本的に変更不要。
+
 - https://github.com/osrg/devstack-gate
   ofaci から ofaci-dev を作成
   master 更新
   master で ofaci-dev を rebase
-- https://github.com/osrg/os-ext-testing
-  ofaci から ofaci-dev を作成し修正
-- https://github.com/osrg/system-config
-  openstack の master を参照する様にして置く
-- https://github.com/osrg/project-config
-  openstack の master を参照する様にして置く
-
 
 前述の様に project-config は常に master branch が参照される為、修正の際
 には一時的に openstack org. の master を参照する様にして置き、修正作業が
@@ -289,6 +292,9 @@ $
 devstack-gate
 -------------
 
+devstack-gate に関しては、現時点では openstack-infra の master を使用できる。
+以前のmaster から修正、追加された主な処理の情報を備忘の為に下記に記します。
+
 - osrg 上の ryu, devstack-gate のリポジトリを clone, update する処理を
   追加。
 - devstack で使用する localrc の編集処理に OFAent 用の設定を追加。
@@ -323,6 +329,12 @@ function pre_test_hook {
          sudo cp $WORKSPACE/81-tempest.sh /opt/stack/new/devstack/extras.d/
          sudo chown stack:stack /opt/stack/new/devstack/extras.d/81-tempest.sh
     fi
+    # make local.conf
+    echo "[[post-config|/etc/neutron/plugins/ml2/ml2_conf.ini]]" > $WORKSPACE/local.conf
+    echo "[agent]" >> $WORKSPACE/local.conf
+    echo "l2_population=True" >> $WORKSPACE/local.conf
+    sudo cp $WORKSPACE/local.conf $BASE/new/devstack/
+    sudo chown jenkins:jenkins $BASE/new/devstack/local.conf
 }
 export -f pre_test_hook
 function post_test_hook {
@@ -339,6 +351,7 @@ export -f post_test_hook
   の追加処理として実行される。ここではテスト環境の設定を変える為に使用。
   - scenario テストでの VM への接続確認のタイマ値を調整。
   - OVS のタイマ値の調整。
+  また local.conf の編集を行っている。
 
   上記 post_test_hook ではテスト終了後に OFA 用に必要となりそうな情報を
   採取している。主に flow テーブル、ブリッジの情報。
@@ -367,27 +380,27 @@ CI 運用に関する補足
 
 - イメージファイルの初期化
   現在インストール直後のジョブ実行処理としてはメモリをクリアな状態に保
-  つ為に、ジョブ設定の build post task で reboot を行うスクリプト(rebuild-node.sh)
-  を実行しています。
-  しかしこれは前回の状態を引き継いだイメージを使い回しており、誤ったパッ
-  ケージ等、前のジョブで環境が破壊された状態でも次のジョブを実行する事
-  となります。場合によっては、手作業でクリーンな状態に復帰する必要も生
-  じます。
+  つ為に、ジョブ設定の build post task でスレーブ上の reboot を行うスク
+  リプト(rebuild-node.sh)を実行しています。
+  しかしこれは前回の状態を引き継いだイメージを使い回す事になり、誤った
+  パッケージ等、前のジョブで環境が破壊された状態を保持したまま次のジョ
+  ブを実行する事となります。場合によっては、手作業でクリーンな状態に復
+  帰する必要も生じます。
   テストの実施に際してはテスト実行前のクリーンなイメージを使用する事が
   望ましい為その方法を述べます。
-  何らかのツールを使用して行う事もできるかも知れないがここでは簡単な
+  何らかのツールを使用して行う事もできるかも知れませんがここでは簡単な
   方法を示します。qemu-img によるオーバラップイメージを使用します。
 
   1) 事前にオーバーラップイメージで起動できるように libvirt の VM 設定
      のイメージファイルをオーバーラップイメージファイルに変更する。
-  2) 現状の build post task スクリプトの reboot を shutdown に変更。
-  3) ホスト上で virsh により slave ノードをチェックしリストされない場
-     合 shutdown しているものと判断する。
+  2) 現状の build post task スクリプトの reboot をリブートしない様
+     (shutdown)に変更。
+  3) ホストマシン上で virsh により slave ノードをチェックしリストされな
+     い場合 shutdown しているものと判断する。
   4) qemu-img にてオーバラップイメージを作り直す。
   5) ノードを virsh で start する。
 
   上記の処理をスクリプトとして作成し、常時監視する様にします。
-
   上記の処理を行うサンプルスクリプトが下記から参照できます。
 
     https://github.com/osrg/ofaci-inst/tree/master/host/check_vm
