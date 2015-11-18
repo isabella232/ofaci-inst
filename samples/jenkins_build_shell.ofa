@@ -89,7 +89,7 @@ function pre_test_hook {
 export -f pre_test_hook
 
 cat << \EOF > devstack-vm-gate-ofa.sh
-#!/bin/bash -xe
+#!/bin/bash -x
 pushd $WORKSPACE
 cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
 ./safe-devstack-vm-gate-wrap.sh
@@ -101,4 +101,4 @@ popd
 exit $RETVAL
 EOF
 
-bash -xe ./devstack-vm-gate-ofa.sh
+bash -x ./devstack-vm-gate-ofa.sh
